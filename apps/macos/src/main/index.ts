@@ -2,12 +2,14 @@ import { app, BrowserWindow, Menu, clipboard, ipcMain, protocol, session } from 
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { choiceEffect, createCloseGate } from './close-gate'
 import { openJsonFromDisk } from './document-io'
 import { openDocument, saveDocument, saveDocumentAs, confirmDiscard, type WindowGrants } from './ipc-handlers'
 import { shouldBlockRequest, windowSecurityOptions } from './navigation'
+import { resolveRendererFile } from './renderer-path'
 
 const grants: WindowGrants = new Map()
-let forceClose = false
+const closeGate = createCloseGate()
 
 const rendererRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../renderer')
 
@@ -29,8 +31,8 @@ function registerAppProtocol(): void {
     if (pathname === '/' || pathname === '') {
       pathname = '/index.html'
     }
-    const file = path.normalize(path.join(rendererRoot, pathname))
-    if (!file.startsWith(rendererRoot)) {
+    const file = resolveRendererFile(rendererRoot, pathname)
+    if (file === null) {
       return new Response('denied', { status: 403 })
     }
     try {
@@ -64,25 +66,21 @@ function createWindow(): BrowserWindow {
     }
   })
   window.on('close', (event) => {
-    if (forceClose) {
-      return
-    }
     const dirty = window.getTitle().includes('未存储') || window.getTitle().includes('Unsaved')
-    if (!dirty) {
-      return
+    if (closeGate.shouldPrevent(dirty)) {
+      event.preventDefault()
+      void confirmDiscard(window).then((choice) => {
+        const effect = choiceEffect(choice)
+        if (effect === 'arm-and-close') {
+          closeGate.arm()
+          window.close()
+          return
+        }
+        if (effect === 'request-save') {
+          window.webContents.send('jsonbranch:request-save-close')
+        }
+      })
     }
-    event.preventDefault()
-    void confirmDiscard(window).then((choice) => {
-      if (choice === 'cancel') {
-        return
-      }
-      if (choice === 'discard') {
-        forceClose = true
-        window.close()
-        return
-      }
-      window.webContents.send('jsonbranch:request-save-close')
-    })
   })
   void window.loadURL('app://jsonbranch/index.html')
   return window
@@ -123,6 +121,14 @@ app.whenReady().then(() => {
     clipboard.writeText(text)
   })
   ipcMain.handle('jsonbranch:confirmDiscard', async (event) => confirmDiscard(BrowserWindow.fromWebContents(event.sender)))
+  ipcMain.on('jsonbranch:os-close-ready', (event) => {
+    const owner = BrowserWindow.fromWebContents(event.sender)
+    if (!owner) {
+      return
+    }
+    closeGate.arm()
+    owner.close()
+  })
   const window = createWindow()
   Menu.setApplicationMenu(
     Menu.buildFromTemplate([

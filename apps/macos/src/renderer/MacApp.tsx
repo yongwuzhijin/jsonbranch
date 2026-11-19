@@ -73,6 +73,7 @@ export function MacApp(): JSX.Element {
         save={save}
         onOpen={() => void open()}
         onSaveAs={(content) => void saveAs(content)}
+        onOsCloseReady={() => window.jsonbranch.notifyOsCloseReady()}
       />
     </div>
   )

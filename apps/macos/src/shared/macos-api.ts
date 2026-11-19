@@ -28,6 +28,8 @@ export type JsonbranchApi = {
   writeClipboard(text: string): Promise<void>
   confirmDiscard(): Promise<'save' | 'discard' | 'cancel'>
   onOpenFromOs(callback: (result: MacOpenResult) => void): () => void
+  onRequestSaveClose(callback: () => void): () => void
+  notifyOsCloseReady(): void
 }
 
 export const jsonbranchMethods = [
@@ -36,7 +38,9 @@ export const jsonbranchMethods = [
   'saveDocumentAs',
   'writeClipboard',
   'confirmDiscard',
-  'onOpenFromOs'
+  'onOpenFromOs',
+  'onRequestSaveClose',
+  'notifyOsCloseReady'
 ] as const
 
 declare global {

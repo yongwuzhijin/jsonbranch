@@ -1,6 +1,6 @@
 import { createJsonDocument, isDirty, type JsonDocument } from '@jsonbranch/json-core'
 import { JsonWorkbench, TextSlot } from '@jsonbranch/json-view'
-import { useEffect, useState, type JSX } from 'react'
+import { useEffect, useRef, useState, type JSX } from 'react'
 import type { MacFileStamp, MacSaveResult } from '../shared/macos-api'
 
 type Save = (content: string, options?: { overwrite?: boolean }) => Promise<MacSaveResult>
@@ -38,6 +38,7 @@ export function MacShell(props: {
   onOpen?: () => void
   onSaveAs?: (content: string) => void
   onClosed?: () => void
+  onOsCloseReady?: () => void
 }): JSX.Element {
   const text = copy[props.locale]
   const [document, setDocument] = useState<JsonDocument>(() => createJsonDocument(props.initial))
@@ -45,6 +46,8 @@ export function MacShell(props: {
   const [intent, setIntent] = useState<'close' | 'open'>('close')
   const [closed, setClosed] = useState(false)
   const [error, setError] = useState('')
+  const osClose = useRef(false)
+  const storeRef = useRef<(overwrite: boolean, fromOs: boolean) => Promise<void>>(async () => {})
 
   useEffect(() => {
     const name = props.path?.split('/').at(-1) ?? '枝序'
@@ -57,24 +60,45 @@ export function MacShell(props: {
     props.onClosed?.()
   }
 
-  async function store(overwrite: boolean): Promise<void> {
+  async function store(overwrite: boolean, fromOs = osClose.current): Promise<void> {
     const result = await props.save(document.input, { overwrite })
     if (result.status === 'ok' || result.status === 'unchanged') {
       setDocument((current) => ({ ...current, baseline: current.input }))
-      if (intent === 'open') {
+      if (intent === 'open' && !fromOs) {
         setDialog(null)
         props.onOpen?.()
         return
       }
       finish()
+      if (fromOs) {
+        osClose.current = false
+        props.onOsCloseReady?.()
+      }
       return
     }
     if (result.status === 'stale') {
       setDialog('stale')
       return
     }
+    osClose.current = false
     setError(result.status === 'failed' ? result.message : result.status)
   }
+
+  storeRef.current = store
+
+  useEffect(() => {
+    const onRequest = () => {
+      osClose.current = true
+      setIntent('close')
+      void storeRef.current(false, true)
+    }
+    window.addEventListener('jsonbranch-request-save-close', onRequest)
+    const unsubscribe = window.jsonbranch?.onRequestSaveClose(onRequest) ?? (() => {})
+    return () => {
+      window.removeEventListener('jsonbranch-request-save-close', onRequest)
+      unsubscribe()
+    }
+  }, [])
 
   if (closed) {
     return <p>{props.locale === 'zh' ? '已关闭' : 'Closed'}</p>
@@ -138,7 +162,13 @@ export function MacShell(props: {
           >
             {text.discard}
           </button>
-          <button type="button" onClick={() => setDialog(null)}>
+          <button
+            type="button"
+            onClick={() => {
+              osClose.current = false
+              setDialog(null)
+            }}
+          >
             {text.cancel}
           </button>
         </div>

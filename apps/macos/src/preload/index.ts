@@ -11,6 +11,14 @@ const api: JsonbranchApi = {
     const listener = (_event: IpcRendererEvent, result: MacOpenResult) => callback(result)
     ipcRenderer.on('jsonbranch:openFromOs', listener)
     return () => ipcRenderer.removeListener('jsonbranch:openFromOs', listener)
+  },
+  onRequestSaveClose: (callback) => {
+    const listener = () => callback()
+    ipcRenderer.on('jsonbranch:request-save-close', listener)
+    return () => ipcRenderer.removeListener('jsonbranch:request-save-close', listener)
+  },
+  notifyOsCloseReady: () => {
+    ipcRenderer.send('jsonbranch:os-close-ready')
   }
 }
 
