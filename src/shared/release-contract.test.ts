@@ -11,6 +11,8 @@ describe('jsonbranch release contract', () => {
     expect(builder).toContain('JSONBranch-macos-x64')
     expect(builder).not.toContain('6CX3WHS9HZ')
     expect(workflow).toContain('arch: [arm64, x64]')
+    expect(workflow).toContain('runs-on: macos-15')
+    expect(workflow).not.toContain('macos-14')
     expect(workflow).toContain('jsonbranch-chrome.zip')
     expect(workflow).toContain('workflow_dispatch')
     expect(readme).toContain('加载未打包的扩展程序')

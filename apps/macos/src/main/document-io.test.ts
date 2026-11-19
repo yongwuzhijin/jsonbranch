@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -89,5 +89,33 @@ describe('mac json files', () => {
       previous: '{"a":1}',
       overwrite: true
     })).toMatchObject({ status: 'denied' })
+  })
+
+  it('keeps the original bytes when the directory rejects the temporary file', async () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'jsonbranch-ro-'))
+    const file = path.join(dir, 'a.json')
+    writeFileSync(file, '{"keep":1}')
+    const opened = await openJsonFromDisk(file)
+    expect(opened.status).toBe('ok')
+    if (opened.status !== 'ok') {
+      return
+    }
+    const grants = new Map([[opened.path, opened.stamp]])
+    chmodSync(dir, 0o555)
+    try {
+      const saved = await saveGrantedJson({
+        grants,
+        path: file,
+        content: '{"lose":1}',
+        previous: '{"keep":1}',
+        overwrite: true
+      })
+      expect(saved.status).toBe('failed')
+      expect(grants.get(opened.path)).toEqual(opened.stamp)
+    } finally {
+      chmodSync(dir, 0o755)
+    }
+    expect(readFileSync(file, 'utf8')).toBe('{"keep":1}')
+    expect(readdirSync(dir).filter((name) => name.includes('.tmp'))).toEqual([])
   })
 })

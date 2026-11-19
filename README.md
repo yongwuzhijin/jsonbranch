@@ -33,7 +33,7 @@ pnpm run build:macos
 pnpm run package:mac
 ```
 
-`package:mac` 需要在 macOS 上运行。发布工作流使用 `macos-14`，按 `arm64` 和 `x64` 分别产出：
+`package:mac` 需要在 macOS 上运行。发布工作流使用仍受支持的 `macos-15`（`macos-14` 已于 2026-11-02 退役），按 `arm64` 和 `x64` 分别产出：
 
 - `JSONBranch-macos-arm64.dmg` 与 `.zip`
 - `JSONBranch-macos-x64.dmg` 与 `.zip`
@@ -42,7 +42,7 @@ bundle id 是 `app.jsonbranch.macos`。应用可以打开和存储本地 `.json`
 
 签名和公证只在 `APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID`、`CSC_LINK`、`CSC_KEY_PASSWORD` 五项都有值时进行。缺任何一项就上传未签名包，构建不会因此失败。未签名应用在其他 Mac 上通常会被 Gatekeeper 拦截，接收者需要在系统设置或 Finder 的「打开」里明确同意后才能运行。没有公证的包不是双击即开的正式安装包。Linux 不能为这些包签名或公证。
 
-人工验收作业 `smoke` 和 `chrome-smoke` 只在手动触发工作流时出现。它们还没在发布用的 Mac 上跑过之前，状态保持「尚未人工验收」。
+人工验收作业 `smoke` 和 `chrome-smoke` 只在手动触发工作流时出现。`release.yml` 目前不在默认分支上，因此 GitHub 不能从功能分支接受 `workflow_dispatch`。打包由推送到 `cursor/jsonbranch-first-release-550b` 触发。点击扩展图标是否打开全页，在无头 Chrome 里没有可点击的工具栏按钮，这一步仍是人工验收。
 
 ## 许可
 

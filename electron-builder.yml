@@ -11,6 +11,7 @@ files:
   - package.json
 extraMetadata:
   main: apps/macos/dist/main/index.js
+  dependencies: {}
 fileAssociations:
   - ext: json
     name: JSON

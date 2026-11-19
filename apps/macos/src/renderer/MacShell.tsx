@@ -42,6 +42,7 @@ export function MacShell(props: {
   const text = copy[props.locale]
   const [document, setDocument] = useState<JsonDocument>(() => createJsonDocument(props.initial))
   const [dialog, setDialog] = useState<'dirty' | 'stale' | null>(null)
+  const [intent, setIntent] = useState<'close' | 'open'>('close')
   const [closed, setClosed] = useState(false)
   const [error, setError] = useState('')
 
@@ -60,6 +61,11 @@ export function MacShell(props: {
     const result = await props.save(document.input, { overwrite })
     if (result.status === 'ok' || result.status === 'unchanged') {
       setDocument((current) => ({ ...current, baseline: current.input }))
+      if (intent === 'open') {
+        setDialog(null)
+        props.onOpen?.()
+        return
+      }
       finish()
       return
     }
@@ -80,7 +86,17 @@ export function MacShell(props: {
         <strong>{props.path ?? text.untitled}</strong>
         {isDirty(document) ? <span>{text.dirty}</span> : null}
         {props.onOpen ? (
-          <button type="button" onClick={props.onOpen}>
+          <button
+            type="button"
+            onClick={() => {
+              if (!isDirty(document)) {
+                props.onOpen?.()
+                return
+              }
+              setIntent('open')
+              setDialog('dirty')
+            }}
+          >
             {props.locale === 'zh' ? '打开' : 'Open'}
           </button>
         ) : null}
@@ -89,7 +105,17 @@ export function MacShell(props: {
             {props.locale === 'zh' ? '另存为' : 'Save As'}
           </button>
         ) : null}
-        <button type="button" onClick={() => (isDirty(document) ? setDialog('dirty') : finish())}>
+        <button
+          type="button"
+          onClick={() => {
+            if (!isDirty(document)) {
+              finish()
+              return
+            }
+            setIntent('close')
+            setDialog('dirty')
+          }}
+        >
           {text.close}
         </button>
       </header>
@@ -99,7 +125,17 @@ export function MacShell(props: {
           <button type="button" onClick={() => void store(false)}>
             {text.save}
           </button>
-          <button type="button" onClick={finish}>
+          <button
+            type="button"
+            onClick={() => {
+              setDialog(null)
+              if (intent === 'open') {
+                props.onOpen?.()
+                return
+              }
+              finish()
+            }}
+          >
             {text.discard}
           </button>
           <button type="button" onClick={() => setDialog(null)}>

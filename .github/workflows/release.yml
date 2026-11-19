@@ -3,6 +3,8 @@ name: release
 on:
   workflow_dispatch:
   push:
+    branches:
+      - cursor/jsonbranch-first-release-550b
     tags:
       - "v*"
 
@@ -30,7 +32,7 @@ jobs:
           path: jsonbranch-chrome.zip
 
   macos:
-    runs-on: macos-14
+    runs-on: macos-15
     strategy:
       fail-fast: false
       matrix:
@@ -76,7 +78,8 @@ jobs:
           if [ "${{ steps.sign.outputs.enabled }}" = "true" ]; then
             pnpm exec electron-builder --mac --${{ matrix.arch }} --config electron-builder.yml -c.mac.hardenedRuntime=true
           else
-            pnpm exec electron-builder --mac --${{ matrix.arch }} --config electron-builder.yml
+            echo "未签名，其他 Mac 上通常会被 Gatekeeper 拦截，接收者需要明确同意才能打开"
+            CSC_IDENTITY_AUTO_DISCOVERY=false pnpm exec electron-builder --mac --${{ matrix.arch }} --config electron-builder.yml -c.mac.identity=null
           fi
       - uses: actions/upload-artifact@v4
         with:
@@ -88,7 +91,7 @@ jobs:
   smoke:
     if: github.event_name == 'workflow_dispatch'
     needs: macos
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Manual macOS acceptance is still outstanding
         run: echo "尚未人工验收。请在本机打开 arm64 与 x64 包，确认打开、保存、另存为、脏标记，以及关闭时的存储、不存储、取消。"
@@ -96,7 +99,7 @@ jobs:
   chrome-smoke:
     if: github.event_name == 'workflow_dispatch'
     needs: extension
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Manual Chrome acceptance is still outstanding
         run: echo "尚未人工验收。请在 macOS 的 Chrome 里加载未打包扩展，确认全页、格式化、搜索、复制、删除后撤销，以及清单里没有 content script。"
