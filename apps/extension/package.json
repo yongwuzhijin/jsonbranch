@@ -1,0 +1,12 @@
+{
+  "name": "@jsonbranch/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@jsonbranch/json-core": "workspace:*",
+    "@jsonbranch/json-view": "workspace:*",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  }
+}
