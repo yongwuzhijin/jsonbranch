@@ -1,5 +1,9 @@
 name: release
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:
@@ -76,10 +80,10 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: ${{ steps.sign.outputs.enabled == 'true' && 'true' || 'false' }}
         run: |
           if [ "${{ steps.sign.outputs.enabled }}" = "true" ]; then
-            pnpm exec electron-builder --mac --${{ matrix.arch }} --config electron-builder.yml -c.mac.hardenedRuntime=true
+            pnpm exec electron-builder --mac --${{ matrix.arch }} --publish never --config electron-builder.yml -c.mac.hardenedRuntime=true
           else
             echo "未签名，其他 Mac 上通常会被 Gatekeeper 拦截，接收者需要明确同意才能打开"
-            CSC_IDENTITY_AUTO_DISCOVERY=false pnpm exec electron-builder --mac --${{ matrix.arch }} --config electron-builder.yml -c.mac.identity=null
+            CSC_IDENTITY_AUTO_DISCOVERY=false pnpm exec electron-builder --mac --${{ matrix.arch }} --publish never --config electron-builder.yml -c.mac.identity=null
           fi
       - uses: actions/upload-artifact@v4
         with:

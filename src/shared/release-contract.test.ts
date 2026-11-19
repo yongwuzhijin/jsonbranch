@@ -14,6 +14,7 @@ describe('jsonbranch release contract', () => {
     expect(workflow).toContain('runs-on: macos-15')
     expect(workflow).not.toContain('macos-14')
     expect(workflow).toContain('jsonbranch-chrome.zip')
+    expect(workflow).toContain('--publish never')
     expect(workflow).toContain('workflow_dispatch')
     expect(readme).toContain('加载未打包的扩展程序')
     expect(readme).toContain('Gatekeeper')
