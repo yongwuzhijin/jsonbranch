@@ -1,0 +1,102 @@
+name: release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build:extension
+      - name: Zip unpacked extension
+        run: |
+          cd apps/extension/dist
+          zip -r "$GITHUB_WORKSPACE/jsonbranch-chrome.zip" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jsonbranch-chrome.zip
+          path: jsonbranch-chrome.zip
+
+  macos:
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, x64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build:macos
+      - name: Decide whether Apple signing secrets are complete
+        id: sign
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        run: |
+          node --experimental-strip-types --input-type=module <<'EOF'
+          import { signingEnabled } from './src/shared/signing.ts'
+          const enabled = signingEnabled(process.env)
+          if (!enabled) {
+            console.log('未签名，其他 Mac 上通常会被 Gatekeeper 拦截，接收者需要明确同意才能打开')
+          }
+          process.stdout.write(enabled ? 'true' : 'false')
+          EOF
+          echo "enabled=$(node --experimental-strip-types --input-type=module -e "import { signingEnabled } from './src/shared/signing.ts'; process.stdout.write(signingEnabled(process.env) ? 'true' : 'false')")" >> "$GITHUB_OUTPUT"
+      - name: Package this architecture
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ steps.sign.outputs.enabled == 'true' && 'true' || 'false' }}
+        run: |
+          if [ "${{ steps.sign.outputs.enabled }}" = "true" ]; then
+            pnpm exec electron-builder --mac --${{ matrix.arch }} --config electron-builder.yml -c.mac.hardenedRuntime=true
+          else
+            pnpm exec electron-builder --mac --${{ matrix.arch }} --config electron-builder.yml
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JSONBranch-macos-${{ matrix.arch }}
+          path: |
+            release/JSONBranch-macos-${{ matrix.arch }}.dmg
+            release/JSONBranch-macos-${{ matrix.arch }}.zip
+
+  smoke:
+    if: github.event_name == 'workflow_dispatch'
+    needs: macos
+    runs-on: macos-14
+    steps:
+      - name: Manual macOS acceptance is still outstanding
+        run: echo "尚未人工验收。请在本机打开 arm64 与 x64 包，确认打开、保存、另存为、脏标记，以及关闭时的存储、不存储、取消。"
+
+  chrome-smoke:
+    if: github.event_name == 'workflow_dispatch'
+    needs: extension
+    runs-on: macos-14
+    steps:
+      - name: Manual Chrome acceptance is still outstanding
+        run: echo "尚未人工验收。请在 macOS 的 Chrome 里加载未打包扩展，确认全页、格式化、搜索、复制、删除后撤销，以及清单里没有 content script。"
