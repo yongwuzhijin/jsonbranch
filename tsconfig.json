@@ -14,5 +14,6 @@
     "useDefineForClassFields": true,
     "types": ["node"]
   },
-  "include": ["src", "packages", "apps", "vitest.config.ts", "scripts"]
+  "include": ["src", "packages", "apps", "vitest.config.ts", "scripts"],
+  "exclude": ["**/*.e2e.ts", "**/dist/**", "**/node_modules/**"]
 }

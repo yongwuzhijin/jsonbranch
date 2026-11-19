@@ -6,7 +6,7 @@ export type ChromeTabs = {
 }
 
 function viewerUrl(): string {
-  const runtime = globalThis.chrome?.runtime
+  const runtime = (globalThis as { chrome?: typeof chrome }).chrome?.runtime
   if (!runtime?.getURL) {
     return 'viewer.html'
   }
@@ -42,7 +42,7 @@ export function chromeTabs(): ChromeTabs {
   }
 }
 
-const browser = globalThis.chrome
+const browser = (globalThis as { chrome?: typeof chrome }).chrome
 if (browser?.action?.onClicked) {
   browser.action.onClicked.addListener(() => {
     void openViewer(chromeTabs(), chromeSessionArea())

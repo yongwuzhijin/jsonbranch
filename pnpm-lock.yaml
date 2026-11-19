@@ -79,6 +79,21 @@ importers:
         specifier: 19.2.8
         version: 19.2.8(react@19.2.8)
 
+  apps/macos:
+    dependencies:
+      '@jsonbranch/json-core':
+        specifier: workspace:*
+        version: link:../../packages/json-core
+      '@jsonbranch/json-view':
+        specifier: workspace:*
+        version: link:../../packages/json-view
+      react:
+        specifier: 19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: 19.2.8
+        version: 19.2.8(react@19.2.8)
+
   packages/json-core:
     dependencies:
       jsonc-parser:

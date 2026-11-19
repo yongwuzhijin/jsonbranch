@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "build:extension": "vite build --config apps/extension/vite.config.ts",
     "test:extension": "playwright test --config apps/extension/playwright.config.ts",
-    "build:macos": "vite build --config apps/macos/vite.config.ts",
+    "build:macos": "vite build --config apps/macos/vite.renderer.config.ts && vite build --config apps/macos/vite.main.config.ts && vite build --config apps/macos/vite.preload.config.ts",
     "package:mac": "pnpm run build:macos && electron-builder --mac --config electron-builder.yml"
   },
   "dependencies": {
