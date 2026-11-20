@@ -1,0 +1,22 @@
+{
+  "name": "@jsonbranch/json-view",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@jsonbranch/json-core": "workspace:*",
+    "@monaco-editor/react": "4.7.0",
+    "@tanstack/react-virtual": "3.14.13",
+    "lucide-react": "0.577.0",
+    "monaco-editor": "0.55.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "peerDependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  }
+}

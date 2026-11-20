@@ -1,0 +1,265 @@
+.json-workbench {
+  --bg: #f4f1ea;
+  --panel: #fffdf8;
+  --ink: #1c1917;
+  --muted: #78716c;
+  --line: #e7e5e4;
+  --accent: #166534;
+  --accent-soft: #dcfce7;
+  --danger: #b91c1c;
+  --key: #9a3412;
+  --string: #166534;
+  --number: #1d4ed8;
+  --boolean: #6d28d9;
+  --null: #78716c;
+  --match: #fde68a;
+  --match-active: #fdba74;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", "Noto Serif SC", serif;
+}
+
+.json-workbench *,
+.json-workbench *::before,
+.json-workbench *::after {
+  box-sizing: border-box;
+}
+
+.json-toolbar,
+.json-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.json-toolbar button,
+.json-search button,
+.json-dialog button,
+.json-row-actions button,
+.json-toggle {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.json-toolbar button,
+.json-search button,
+.json-dialog button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 2px 8px;
+  border-color: var(--line);
+  background: #fff;
+}
+
+.json-toolbar button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.json-toolbar button:disabled,
+.json-search button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.json-keep {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.json-panes {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.json-editor-pane,
+.json-tree-pane {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.json-editor-pane {
+  background: var(--panel);
+}
+
+.json-editor-pane > * {
+  flex: 1;
+  min-height: 0;
+}
+
+.json-tree-pane {
+  flex: 1;
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.json-splitter {
+  width: 6px;
+  flex: none;
+  cursor: col-resize;
+  background: #d6d3d1;
+}
+
+.json-splitter:hover {
+  background: var(--accent);
+}
+
+.json-search input {
+  flex: 1;
+  min-width: 120px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 8px;
+  font: inherit;
+  background: #fff;
+}
+
+.json-search-count {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.json-tree-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 0;
+}
+
+.json-tree-message {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.json-tree-message.error {
+  color: var(--danger);
+}
+
+.json-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 22px;
+  padding-right: 8px;
+  font-family: "IBM Plex Mono", "Sarasa Mono SC", "Noto Sans Mono", ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 22px;
+}
+
+.json-row.selected,
+.json-row.active-match {
+  background: #fff7ed;
+}
+
+.json-line-number {
+  width: 2.5rem;
+  flex: none;
+  text-align: right;
+  color: var(--muted);
+  user-select: none;
+}
+
+.json-toggle,
+.json-toggle-spacer {
+  width: 16px;
+  height: 22px;
+  flex: none;
+  padding: 0;
+}
+
+.json-token {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.json-key { color: var(--key); font-weight: 650; }
+.json-index, .json-punct { color: var(--muted); }
+.json-string { color: var(--string); font-weight: 650; }
+.json-number { color: var(--number); }
+.json-boolean { color: var(--boolean); }
+.json-null { color: var(--null); }
+
+.json-highlight {
+  border-radius: 2px;
+  background: var(--match);
+}
+
+.json-highlight.active {
+  background: var(--match-active);
+}
+
+.json-row-actions {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: auto;
+  opacity: 0;
+}
+
+.json-row:hover .json-row-actions,
+.json-row:focus-within .json-row-actions,
+.json-row.selected .json-row-actions {
+  opacity: 1;
+}
+
+.json-row-actions button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: var(--muted);
+}
+
+.json-status {
+  min-height: 0;
+  padding: 0 10px 6px;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.json-status:empty {
+  display: none;
+}
+
+.json-fallback {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  margin: 0;
+  border: 0;
+  resize: none;
+  padding: 12px;
+  background: transparent;
+  color: inherit;
+  font-family: "IBM Plex Mono", "Sarasa Mono SC", "Noto Sans Mono", ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
