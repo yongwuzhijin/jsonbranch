@@ -1,7 +1,7 @@
 # 枝序 JSONBranch 工具栏设计说明
 
 日期：2026-11-20
-状态：待用户审阅。本文只描述设计，不包含实现。
+状态：待书面审阅。2026-11-25 补入上次输入的保存结论。本文只描述设计，不包含实现。
 目标仓库：https://github.com/yongwuzhijin/jsonbranch （公开）
 本文路径：`docs/superpowers/specs/2026-11-20-jsonbranch-toolbar-design.md`
 基线是当前分支上已实现的共享工作台。Orca 保持不变。macOS 窗口外层的打开、另存为、关闭不在本文范围。
@@ -22,7 +22,7 @@
 
 ## 3. 顶栏外观与可访问性
 
-每个顶栏控件只显示图标，不显示功能名文字。`title` 与 `aria-label` 使用同一句当前语言的功能名。中文和英文沿用现有文案：格式化 / Format，全部展开 / Expand all，全部折叠 / Collapse all，行号 / Line numbers，复制 / Copy，复制路径 / Copy path，复制键值对 / Copy pair，复制值 / Copy value，删除 / Delete，撤销 / Undo，清空 / Clear，保留转义 / Keep escapes。
+每个顶栏控件只显示图标，不显示功能名文字。悬浮 `title` 固定为中文功能名：格式化、全部展开、全部折叠、行号、复制、复制路径、复制键值对、复制值、删除、撤销、清空、保留转义。`aria-label` 跟随当前界面语言，英文会话仍是 Format、Expand all、Collapse all、Line numbers、Copy、Copy path、Copy pair、Copy value、Delete、Undo、Clear、Keep escapes。这和上一稿「`title` 与 `aria-label` 同一句」不同，因为用户这次明确要求悬浮中文名，同时英文屏幕阅读器仍需要英文名称。
 
 图标使用已有的 `lucide-react` `0.577.0`。全部展开、全部折叠、复制路径、复制键值对、复制值、清空、保留转义补上图标。字号用一减一加两个图标。图标标记为装饰，不进入可访问名称。
 
@@ -48,7 +48,7 @@
 
 只有有限的整数，并且在 12 到 24 闭区间内，才原样返回。缺失、`null`、非数字、数字字符串、小数、`NaN`、小于 12 或大于 24，都返回 13。不把越界值夹到边界。
 
-减小把当前值减 1，增大把当前值加 1，结果再经过这个函数。按钮的 `title` 和 `aria-label` 包含动作和当前值。中文是「减小字号，当前 N」和「增大字号，当前 N」。英文是 “Decrease font size, current N” 和 “Increase font size, current N”。N 是按下之前的当前值。
+减小把当前值减 1，增大把当前值加 1，结果再经过这个函数。悬浮 `title` 固定为中文，并包含按下之前的当前值：「减小字号，当前 N」「增大字号，当前 N」。`aria-label` 在中文界面与 `title` 相同；英文界面是 “Decrease font size, current N” 和 “Increase font size, current N”。
 
 `TextSlot` 接收这个整数。Monaco 的 `fontSize` 使用它。textarea 降级的字号也使用它。Monaco 尚未出现时的「正在打开编辑器」不要求跟随字号。树行字号保持 13px。
 
@@ -74,7 +74,7 @@ macOS 不把字号写入正在编辑的 `.json`，也不因此把窗口标成未
 
 验收：
 
-1. 顶栏 11 个操作和保留转义都只有图标，悬浮能看到当前语言的功能名，屏幕阅读器使用同一名称。
+1. 顶栏 11 个操作和保留转义都只有图标。悬浮看到中文功能名。屏幕阅读器在中文界面听到中文，在英文界面听到英文。
 2. 键盘焦点移动到可用顶栏控件时能看见焦点环。
 3. 行号和保留转义的按下状态与选中外观一致，功能与改前相同。
 4. 字号从 13 起以 1 为步长在 12 到 24 之间变化，上下限按钮禁用，提示含当前值。
@@ -84,4 +84,20 @@ macOS 不把字号写入正在编辑的 `.json`，也不因此把窗口标成未
 
 ## 7. 明确不做
 
-不引入新的提示组件或图标包。不把搜索条改成文字按钮。不把树行按钮的可访问名称改成不带路径。不把字号写入 JSON 文档或撤销记录。不夹取越界字号。不在本设计中实现代码。
+不引入新的提示组件或图标包。不把搜索条改成文字按钮。不把树行按钮的可访问名称改成不带路径。不把字号写入 JSON 文档或撤销记录。不夹取越界字号。不在本设计中实现代码。不新增「检查是否自动保存」按钮。不让 macOS 在键入时自动覆写已打开的文件。
+
+## 8. 上次输入会不会自动保存
+
+这次只核对当前分支已有行为，不新增保存功能。三件事要分开。
+
+扩展草稿会自动记住上次填入的内容。`apps/extension/src/viewer.tsx` 在本机记录读取成功后，每次文档变化都调用 `saveStoredDocument`。`apps/extension/src/storage.ts` 把 `input`、`keepEscapes`、`showLineNumbers` 写入 `chrome.storage.local` 的键 `document`。重新打开全页时，`loadStoredDocument` 再读出这份草稿。端到端测试 `apps/extension/viewer.e2e.ts` 在格式化后轮询该键，刷新页面后编辑区仍含 `Beta`。这是扩展自己的草稿，不是磁盘上的 `.json` 文件。读取失败时 `canPersist` 保持为假，测试 `viewer-persistence.test.tsx` 证明随后的键入不会写入空记录。写入失败时屏幕上的文字还在，并显示「无法保存在本机」，这次内容不会成为下次恢复的草稿。
+
+`chrome.storage.session` 只保存全页标签的 id，键是 `viewerTabId`，见 `apps/extension/src/background.ts` 的 `openViewer`。浏览器退出后这份会话记录消失。它不保存 JSON 正文。
+
+macOS 不会因为键入而自动覆写文件。磁盘写入只出现在 `apps/macos/src/main/document-io.ts` 的 `saveGrantedJson` 和 `saveJsonAs`。调用点是明确的存储、另存为，以及关闭时选择存储。`apps/macos/src/renderer/MacApp.tsx` 启动时 `opened` 为空，编辑区初始文本是空字符串。代码里没有 userData 草稿，也没有记住上次打开路径并在下次启动时读回。关闭时选择不存储会丢掉这次缓冲区。未授权路径的测试证明，没有这次打开授权的文件保持原字节。外部文件已变化且未确认覆盖时，保存返回 `stale`，磁盘内容保持外部写入的结果。因此，macOS 重新打开应用不会自动恢复上次填入的内容，也不会自动覆写上次的文件。
+
+待审阅的建议：
+
+- 这次工具栏改动不增加检查按钮。扩展已经自动保存草稿；若要在界面上说明，用一句状态文字即可，不要做成会写文件的按钮。
+- 若希望 macOS 也记住未存储的草稿，应另写 userData 里的草稿，并在规格批准后再做。它不能在键入时调用 `saveGrantedJson`。
+- 扩展草稿在每次文档变化后立即写入，没有单独的防抖。存储配额失败时，本次文字还在屏幕上，但下次打开恢复不到这次内容。
