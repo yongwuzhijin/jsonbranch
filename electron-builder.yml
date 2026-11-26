@@ -1,0 +1,35 @@
+publish: null
+appId: app.jsonbranch.macos
+productName: 枝序
+executableName: JSONBranch
+electronVersion: 43.7.5
+asar: true
+npmRebuild: false
+directories:
+  output: release
+files:
+  - apps/macos/dist/**/*
+  - package.json
+extraMetadata:
+  main: apps/macos/dist/main/index.js
+  dependencies: {}
+fileAssociations:
+  - ext: json
+    name: JSON
+    description: JSON document
+    role: Editor
+    rank: Alternate
+mac:
+  category: public.app-category.developer-tools
+  icon: build/icon.png
+  target:
+    - dmg
+    - zip
+  artifactName: JSONBranch-macos-${arch}.${ext}
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  entitlementsInherit: entitlements.mac.plist
+# JSONBranch-macos-arm64.dmg
+# JSONBranch-macos-arm64.zip
+# JSONBranch-macos-x64.dmg
+# JSONBranch-macos-x64.zip
