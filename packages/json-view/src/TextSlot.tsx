@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
+import { normalizeEditorFontSize } from './editor-font-size'
 import type { TextSlotProps } from './json-view-model'
 import { installMonacoWorkers, probeEditorWorker } from './monaco-environment'
 import './workbench.css'
@@ -15,6 +16,7 @@ type EditorComponent = (props: {
 
 export function TextSlot(props: TextSlotProps & { createWorker?: () => Worker }): JSX.Element {
   const { value, onChange, createWorker } = props
+  const fontSize = normalizeEditorFontSize(props.fontSize)
   const [mode, setMode] = useState<'monaco' | 'textarea'>(() => probeEditorWorker(createWorker))
   const [Editor, setEditor] = useState<EditorComponent | null>(null)
   const editorReady = useRef(false)
@@ -61,6 +63,7 @@ export function TextSlot(props: TextSlotProps & { createWorker?: () => Worker })
     return (
       <textarea
         className="json-fallback"
+        style={{ fontSize }}
         aria-label="json"
         spellCheck={false}
         value={value}
@@ -79,10 +82,10 @@ export function TextSlot(props: TextSlotProps & { createWorker?: () => Worker })
       language="json"
       theme="vs"
       value={value}
-      loading={<textarea className="json-fallback" aria-label="json" spellCheck={false} value={value} readOnly />}
+      loading={<textarea className="json-fallback" style={{ fontSize }} aria-label="json" spellCheck={false} value={value} readOnly />}
       onChange={(next) => onChange(next ?? '')}
       options={{
-        fontSize: 13,
+        fontSize,
         minimap: { enabled: false },
         wordWrap: 'on',
         scrollBeyondLastLine: false,

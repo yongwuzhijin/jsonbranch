@@ -2,6 +2,7 @@ import { findJsonMatches, type JsonSearchMatch } from '@jsonbranch/json-core'
 
 export type TextSlotProps = {
   value: string
+  fontSize?: number
   onChange(value: string): void
 }
 

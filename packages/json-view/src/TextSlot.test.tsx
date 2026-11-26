@@ -16,4 +16,16 @@ describe('TextSlot', () => {
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '{"a":1}' } })
     expect(seen).toEqual(['{"a":1}'])
   })
+
+  it('applies a valid font size to the fallback textarea', () => {
+    render(<TextSlot value="{}" fontSize={18} onChange={() => {}} createWorker={() => { throw new EvalError('csp') }} />)
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).style.fontSize).toBe('18px')
+  })
+
+  it('uses 13px when the font size is missing or illegal', () => {
+    const { rerender } = render(<TextSlot value="{}" onChange={() => {}} createWorker={() => { throw new EvalError('csp') }} />)
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).style.fontSize).toBe('13px')
+    rerender(<TextSlot value="{}" fontSize={11} onChange={() => {}} createWorker={() => { throw new EvalError('csp') }} />)
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).style.fontSize).toBe('13px')
+  })
 })
