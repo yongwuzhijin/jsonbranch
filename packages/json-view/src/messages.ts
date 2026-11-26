@@ -21,7 +21,10 @@ const zh = {
   resize: '调整分栏',
   matchSuffix: '处',
   expandNode: '展开节点',
-  collapseNode: '折叠节点'
+  collapseNode: '折叠节点',
+  decreaseFont: (current: number) => `减小字号，当前 ${current}`,
+  increaseFont: (current: number) => `增大字号，当前 ${current}`,
+  fontSaveFailed: '字号未能记在本机'
 }
 
 const en: typeof zh = {
@@ -45,7 +48,10 @@ const en: typeof zh = {
   resize: 'Resize panes',
   matchSuffix: 'matches',
   expandNode: 'Expand node',
-  collapseNode: 'Collapse node'
+  collapseNode: 'Collapse node',
+  decreaseFont: (current: number) => `Decrease font size, current ${current}`,
+  increaseFont: (current: number) => `Increase font size, current ${current}`,
+  fontSaveFailed: 'Font size was not saved on this device.'
 }
 
 export function messages(locale: WorkbenchLocale): typeof zh {
