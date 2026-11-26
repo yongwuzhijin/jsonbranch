@@ -1,3 +1,5 @@
+import type { JsonHistoryEntry } from '@jsonbranch/json-core'
+
 export type MacFileStamp = {
   mtimeMs: number
   size: number
@@ -32,6 +34,8 @@ export type JsonbranchApi = {
   notifyOsCloseReady(): void
   readEditorFontSize(): Promise<number>
   writeEditorFontSize(size: number): Promise<{ ok: boolean }>
+  readJsonHistory(): Promise<JsonHistoryEntry[]>
+  writeJsonHistory(entries: JsonHistoryEntry[]): Promise<void>
 }
 
 export const jsonbranchMethods = [
@@ -44,7 +48,9 @@ export const jsonbranchMethods = [
   'onRequestSaveClose',
   'notifyOsCloseReady',
   'readEditorFontSize',
-  'writeEditorFontSize'
+  'writeEditorFontSize',
+  'readJsonHistory',
+  'writeJsonHistory'
 ] as const
 
 declare global {

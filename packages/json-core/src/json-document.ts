@@ -19,17 +19,22 @@ export function createJsonDocument(input = ''): JsonDocument {
   }
 }
 
-export function applyFormat(document: JsonDocument): JsonDocument {
+export function applyFormat(document: JsonDocument, indent: 2 | 4 = 2): JsonDocument {
   const result = parseJsonInput(document.input, { keepEscapes: document.keepEscapes })
   if (result.status !== 'ok') {
     return document
   }
-  return { ...document, input: JSON.stringify(result.value, null, 2) }
+  const input = JSON.stringify(result.value, null, indent)
+  if (input === document.input) {
+    return document
+  }
+  return { ...document, undoInput: document.input, input }
 }
 
 export function applyDelete(
   document: JsonDocument,
-  segments: readonly (string | number)[]
+  segments: readonly (string | number)[],
+  indent: 2 | 4 = 2
 ): JsonDocument {
   if (segments.length === 0) {
     return document
@@ -47,7 +52,7 @@ export function applyDelete(
   return {
     ...document,
     undoInput: document.input,
-    input: JSON.stringify(nextValue, null, 2)
+    input: JSON.stringify(nextValue, null, indent)
   }
 }
 

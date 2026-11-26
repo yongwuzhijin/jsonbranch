@@ -61,7 +61,7 @@ describe('JsonWorkbench', () => {
 
   it('keeps accessible names and removes visible function names', () => {
     render(<Host copyText={async () => {}} />)
-    const names = ['格式化', '全部展开', '全部折叠', '行号', '复制', '复制路径', '复制键值对', '复制值', '删除', '撤销', '清空', '保留转义']
+    const names = ['格式化', '压缩', '示例', '全部展开', '全部折叠', '行号', '复制原文', '复制结果', '复制路径', '复制键值对', '复制值', '删除', '撤销', '清空', '保留转义']
     for (const name of names) {
       const button = screen.getByRole('button', { name })
       expect(button.hasAttribute('title')).toBe(false)
@@ -89,7 +89,10 @@ describe('JsonWorkbench', () => {
         ['Expand all', '全部展开'],
         ['Collapse all', '全部折叠'],
         ['Line numbers', '行号'],
-        ['Copy', '复制'],
+        ['Copy source', '复制原文'],
+        ['Copy result', '复制结果'],
+        ['Minify', '压缩'],
+        ['Demo', '示例'],
         ['Copy path', '复制路径'],
         ['Copy pair', '复制键值对'],
         ['Copy value', '复制值'],
@@ -118,24 +121,13 @@ describe('JsonWorkbench', () => {
 
   it('gives every toolbar button and every row action its own icon', () => {
     render(<Host copyText={async () => {}} />)
-    const toolbarIcons = iconNames(document.querySelector('.json-toolbar'))
-    expect(toolbarIcons).toEqual([
-      'wand-sparkles',
-      'unfold-vertical',
-      'fold-vertical',
-      'copy',
-      'route',
-      'braces',
-      'whole-word',
-      'trash2',
-      'undo2',
-      'eraser',
-      'list-ordered',
-      'text-quote',
-      'minus',
-      'plus'
-    ])
+    const toolbarIcons = iconNames(document.querySelector('.json-editor-tools'))
+    expect(toolbarIcons).toEqual(['wand-sparkles', 'chevrons-down-up', 'lightbulb', 'undo2', 'clipboard-copy', 'eraser'])
     expect(new Set(toolbarIcons).size).toBe(toolbarIcons.length)
+    const viewIcons = iconNames(document.querySelector('.json-view-tools'))
+    expect(new Set(viewIcons).size).toBe(viewIcons.length)
+    expect(viewIcons).toContain('whole-word')
+    expect(viewIcons).toContain('braces')
     const rowIcons = iconNames(screen.getByTestId('json-tree-row-name').querySelector('.json-row-actions'))
     expect(rowIcons).toEqual(['braces', 'route', 'whole-word', 'trash2'])
     expect(new Set(rowIcons).size).toBe(rowIcons.length)
@@ -159,7 +151,7 @@ describe('JsonWorkbench', () => {
   it('keeps the existing disabled conditions', () => {
     render(<Host copyText={async () => {}} initial="" />)
     expect(screen.getByRole('button', { name: '格式化' }).hasAttribute('disabled')).toBe(true)
-    expect(screen.getByRole('button', { name: '复制' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: '压缩' }).hasAttribute('disabled')).toBe(true)
     expect(screen.getByRole('button', { name: '复制路径' }).hasAttribute('disabled')).toBe(true)
     expect(screen.getByRole('button', { name: '复制键值对' }).hasAttribute('disabled')).toBe(true)
     expect(screen.getByRole('button', { name: '复制值' }).hasAttribute('disabled')).toBe(true)
@@ -265,6 +257,49 @@ describe('JsonWorkbench', () => {
     expect(css).toContain('-apple-system, BlinkMacSystemFont, "PingFang SC"')
     expect(css).toContain('"SF Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace')
     expect(css).toMatch(/\.json-row\s*\{[^}]*font-size:\s*13px/)
+  })
+
+  it('minifies, builds a schema, and restores a history snapshot', async () => {
+    vi.useFakeTimers()
+    try {
+      const onHistoryChange = vi.fn()
+      const copyText = vi.fn(async () => {})
+      render(<Host copyText={copyText} />)
+      fireEvent.click(screen.getByRole('button', { name: '压缩' }))
+      expect((screen.getByLabelText('json') as HTMLTextAreaElement).value).toBe('{"name":"Beta"}')
+      fireEvent.click(screen.getByRole('button', { name: '转 JSON Schema' }))
+      expect(screen.getByText(/json-schema.org/)).toBeTruthy()
+      fireEvent.click(screen.getByRole('button', { name: '树形视图' }))
+      cleanup()
+      function HistoryHost() {
+        const [document, setDocument] = useState(createJsonDocument('{"name":"Beta"}'))
+        return (
+          <JsonWorkbench
+            document={document}
+            locale="zh"
+            history={[{ id: 'old', text: '{"restored":true}', savedAt: Date.now(), bytes: 18 }]}
+            historyReady
+            onHistoryChange={onHistoryChange}
+            onDocument={setDocument}
+            copyText={async () => {}}
+            TextSlot={({ value, onChange }) => <textarea aria-label="json" value={value} onChange={(event) => onChange(event.target.value)} />}
+          />
+        )
+      }
+      render(<HistoryHost />)
+      fireEvent.change(screen.getByLabelText('json'), { target: { value: '{"name":"Gamma"}' } })
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000)
+      })
+      expect(onHistoryChange).toHaveBeenCalled()
+      expect(onHistoryChange.mock.calls.at(-1)?.[0][0].text).toBe('{"name":"Gamma"}')
+      fireEvent.click(screen.getByRole('button', { name: /刚刚/ }))
+      expect((screen.getByLabelText('json') as HTMLTextAreaElement).value).toBe('{"restored":true}')
+      fireEvent.click(screen.getByRole('button', { name: '撤销' }))
+      expect((screen.getByLabelText('json') as HTMLTextAreaElement).value).toBe('{"name":"Gamma"}')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

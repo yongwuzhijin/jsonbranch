@@ -128,6 +128,12 @@
   font-size: 13px;
 }
 
+.json-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
 .json-panes {
   flex: 1;
   min-height: 0;
@@ -350,6 +356,135 @@
   pointer-events: none;
   white-space: nowrap;
   box-shadow: 0 4px 14px rgba(28, 25, 23, 0.16);
+}
+
+.json-history {
+  width: 220px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #fff;
+  border-right: 1px solid #e5e7eb;
+}
+
+.json-history-tools strong {
+  margin-right: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.json-history-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.json-history-empty {
+  margin: 12px 4px;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.json-history-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.json-history-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  color: #111827;
+  cursor: pointer;
+}
+
+.json-history-preview,
+.json-history-meta {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.json-convert {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 8px;
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.json-convert button {
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #f8f9fb;
+  color: #111827;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.json-convert button:hover {
+  background: #eef0f3;
+}
+
+.json-view-tools select,
+.json-view-search {
+  height: 28px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  color: #111827;
+  font: inherit;
+  font-size: 12px;
+}
+
+.json-view-search {
+  width: 128px;
+  min-width: 72px;
+  padding: 0 8px;
+}
+
+.json-schema {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  overflow: auto;
+  padding: 12px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.json-workbench.right-full .json-history,
+.json-workbench.right-full .json-editor-pane,
+.json-workbench.right-full .json-splitter {
+  display: none;
 }
 
 .json-fallback {

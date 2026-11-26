@@ -19,6 +19,8 @@ const api: JsonbranchApi = {
   },
   readEditorFontSize: () => ipcRenderer.invoke('jsonbranch:readEditorFontSize'),
   writeEditorFontSize: (size: number) => ipcRenderer.invoke('jsonbranch:writeEditorFontSize', size),
+  readJsonHistory: () => ipcRenderer.invoke('jsonbranch:readJsonHistory'),
+  writeJsonHistory: (entries) => ipcRenderer.invoke('jsonbranch:writeJsonHistory', entries),
   notifyOsCloseReady: () => {
     ipcRenderer.send('jsonbranch:os-close-ready')
   }

@@ -1,4 +1,4 @@
-import { createJsonDocument, isDirty, type JsonDocument } from '@jsonbranch/json-core'
+import { createJsonDocument, isDirty, type JsonDocument, type JsonHistoryEntry } from '@jsonbranch/json-core'
 import { IconButton, JsonWorkbench, TextSlot } from '@jsonbranch/json-view'
 import { FileDown, FolderOpen, Save, X } from 'lucide-react'
 import { useEffect, useRef, useState, type JSX } from 'react'
@@ -56,6 +56,9 @@ export function MacShell(props: {
   onOsCloseReady?: () => void
   editorFontSize?: number
   onEditorFontSize?: (size: number) => void
+  history?: readonly JsonHistoryEntry[]
+  historyReady?: boolean
+  onHistoryChange?: (entries: JsonHistoryEntry[]) => void
 }): JSX.Element {
   const text = copy[props.locale]
   const [document, setDocument] = useState<JsonDocument>(() => createJsonDocument(props.initial))
@@ -258,6 +261,9 @@ export function MacShell(props: {
         locale={props.locale}
         editorFontSize={props.editorFontSize}
         onEditorFontSize={props.onEditorFontSize}
+        history={props.history}
+        historyReady={props.historyReady}
+        onHistoryChange={props.onHistoryChange}
         onDocument={setDocument}
         TextSlot={TextSlot}
         copyText={async (value) => {

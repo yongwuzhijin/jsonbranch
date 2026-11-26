@@ -1,4 +1,27 @@
+export {
+  chineseToUnicode,
+  demoJson,
+  escapeJsonString,
+  jsonToQuery,
+  minifyJson,
+  pythonDictToJson,
+  unescapeJsonString,
+  unicodeToChinese,
+  type ConvertCode,
+  type ConvertResult
+} from './json-convert'
 export { buildJsonPairText, buildJsonValueText } from './json-copy-text'
+export {
+  formatHistoryAge,
+  formatHistoryBytes,
+  formatHistoryClock,
+  JSON_HISTORY_LIMIT,
+  normalizeJsonHistory,
+  rememberJsonHistory,
+  removeJsonHistory,
+  type JsonHistoryEntry
+} from './json-history'
+export { jsonToSchema } from './json-schema'
 export { deleteJsonNodeAt } from './json-delete-node'
 export {
   applyDelete,

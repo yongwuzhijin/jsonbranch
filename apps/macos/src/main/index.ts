@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { choiceEffect, createCloseGate } from './close-gate'
 import { openJsonFromDisk } from './document-io'
 import { readEditorFontFile, writeEditorFontResult } from './editor-font-file'
+import { readJsonHistoryFile, writeJsonHistoryFile } from './json-history-file'
 import { openDocument, saveDocument, saveDocumentAs, confirmDiscard, type WindowGrants } from './ipc-handlers'
 import { shouldBlockRequest, windowSecurityOptions } from './navigation'
 import { resolveRendererFile } from './renderer-path'
@@ -125,6 +126,10 @@ app.whenReady().then(() => {
   })
   ipcMain.handle('jsonbranch:readEditorFontSize', () => readEditorFontFile(app.getPath('userData')))
   ipcMain.handle('jsonbranch:writeEditorFontSize', (_event, size: unknown) => writeEditorFontResult(app.getPath('userData'), size))
+  ipcMain.handle('jsonbranch:readJsonHistory', () => readJsonHistoryFile(app.getPath('userData')))
+  ipcMain.handle('jsonbranch:writeJsonHistory', (_event, entries: unknown) => {
+    writeJsonHistoryFile(app.getPath('userData'), Array.isArray(entries) ? entries : [])
+  })
   ipcMain.handle('jsonbranch:confirmDiscard', async (event) => confirmDiscard(ownerFromSender(event.sender)))
   ipcMain.on('jsonbranch:os-close-ready', (event) => {
     applyCloseChoice(ownerFromSender(event.sender), 'arm-and-close', () => closeGate.arm())
