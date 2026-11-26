@@ -83,7 +83,8 @@ test('full tab formats pasted JSON without content scripts', async () => {
     expect(page.url()).toContain('chrome-extension://')
     const formatButton = page.getByRole('button', { name: /^(格式化|Format)$/ })
     await expect(formatButton).toBeVisible()
-    const chinese = (await formatButton.innerText()).includes('格式')
+    await expect(formatButton).toHaveAttribute('title', '格式化')
+    const chinese = (await formatButton.getAttribute('aria-label')) === '格式化'
     const label = chinese
       ? { format: '格式化', copyPath: '复制路径', delete: '删除', undo: '撤销' }
       : { format: 'Format', copyPath: 'Copy path', delete: 'Delete', undo: 'Undo' }

@@ -87,4 +87,13 @@ describe('MacShell', () => {
     expect(await screen.findByText('已关闭')).toBeTruthy()
     expect(onOsCloseReady).toHaveBeenCalledTimes(1)
   })
+
+  it('does not mark a clean mac document unsaved when the editor font changes', () => {
+    const save = vi.fn(async () => ({ status: 'ok' as const, path: '/a.json', stamp: { mtimeMs: 1, size: 1 } }))
+    render(<MacShell path="/a.json" initial="{}" locale="zh" save={save} />)
+    fireEvent.click(screen.getByRole('button', { name: '增大字号，当前 13', exact: true }))
+    expect(screen.queryByText('未存储')).toBeNull()
+    expect(save).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: '增大字号，当前 14', exact: true })).toBeTruthy()
+  })
 })

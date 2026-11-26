@@ -20,8 +20,26 @@ import {
   type JsonTreeRow
 } from '@jsonbranch/json-core'
 import { clampSplitRatio, DEFAULT_SPLIT_RATIO } from '@jsonbranch/json-core'
-import { ChevronDown, ChevronUp, Copy, ListOrdered, Trash2, Undo2, Wand2 } from 'lucide-react'
+import {
+  Braces,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  Eraser,
+  FoldVertical,
+  ListOrdered,
+  Minus,
+  Plus,
+  Route,
+  TextQuote,
+  Trash2,
+  Undo2,
+  UnfoldVertical,
+  Wand2,
+  WholeWord
+} from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react'
+import { normalizeEditorFontSize, stepEditorFontSize } from './editor-font-size'
 import { JsonTreeView } from './JsonTreeView'
 import { messages } from './messages'
 import { searchState, type CopyText, type TextSlotProps } from './json-view-model'
@@ -32,12 +50,32 @@ const PARSE_DEBOUNCE_MS = 200
 export function JsonWorkbench(props: {
   document: JsonDocument
   locale: 'zh' | 'en'
+  editorFontSize?: number
   TextSlot: (props: TextSlotProps) => JSX.Element
   copyText: CopyText
   onDocument(document: JsonDocument): void
+  onEditorFontSize?(size: number): void
 }): JSX.Element {
   const { document, locale, TextSlot, copyText, onDocument } = props
   const copy = messages(locale)
+  const title = messages('zh')
+  const [uncontrolledFontSize, setUncontrolledFontSize] = useState(13)
+  const fontControlled = props.editorFontSize !== undefined
+  const editorFontSize = normalizeEditorFontSize(fontControlled ? props.editorFontSize : uncontrolledFontSize)
+  function changeFont(direction: -1 | 1): void {
+    if (direction === -1 && editorFontSize <= 12) {
+      return
+    }
+    if (direction === 1 && editorFontSize >= 24) {
+      return
+    }
+    const next = stepEditorFontSize(editorFontSize, direction)
+    if (fontControlled) {
+      props.onEditorFontSize?.(next)
+      return
+    }
+    setUncontrolledFontSize(next)
+  }
   const containerRef = useRef<HTMLDivElement>(null)
   const [ratio, setRatio] = useState(DEFAULT_SPLIT_RATIO)
   const [expansion, setExpansion] = useState(createJsonExpansion)
@@ -104,26 +142,28 @@ export function JsonWorkbench(props: {
   return (
     <div className="json-workbench">
       <div className="json-toolbar">
-        <button type="button" disabled={result.status !== 'ok'} onClick={() => publish(applyFormat(document))}>
+        <button type="button" title={title.format} aria-label={copy.format} disabled={result.status !== 'ok'} onClick={() => publish(applyFormat(document))}>
           <Wand2 size={14} aria-hidden="true" />
-          {copy.format}
         </button>
-        <button type="button" onClick={() => setExpansion(expandAllJsonNodes())}>
-          {copy.expandAll}
+        <button type="button" title={title.expandAll} aria-label={copy.expandAll} onClick={() => setExpansion(expandAllJsonNodes())}>
+          <UnfoldVertical size={14} aria-hidden="true" />
         </button>
-        <button type="button" onClick={() => setExpansion(collapseAllJsonNodes())}>
-          {copy.collapseAll}
+        <button type="button" title={title.collapseAll} aria-label={copy.collapseAll} onClick={() => setExpansion(collapseAllJsonNodes())}>
+          <FoldVertical size={14} aria-hidden="true" />
         </button>
         <button
           type="button"
+          title={title.lineNumbers}
+          aria-label={copy.lineNumbers}
           aria-pressed={document.showLineNumbers}
           onClick={() => onDocument({ ...document, showLineNumbers: !document.showLineNumbers })}
         >
           <ListOrdered size={14} aria-hidden="true" />
-          {copy.lineNumbers}
         </button>
         <button
           type="button"
+          title={title.copy}
+          aria-label={copy.copy}
           disabled={result.status !== 'ok'}
           onClick={() => {
             if (result.status === 'ok') {
@@ -132,23 +172,23 @@ export function JsonWorkbench(props: {
           }}
         >
           <Copy size={14} aria-hidden="true" />
-          {copy.copy}
         </button>
-        <button type="button" disabled={current === null} onClick={() => current && void writeCopy(toCopyablePath(current.path))}>
-          {copy.copyPath}
+        <button type="button" title={title.copyPath} aria-label={copy.copyPath} disabled={current === null} onClick={() => current && void writeCopy(toCopyablePath(current.path))}>
+          <Route size={14} aria-hidden="true" />
         </button>
-        <button type="button" disabled={current === null} onClick={() => current && void writeCopy(buildJsonPairText(current))}>
-          {copy.copyPair}
+        <button type="button" title={title.copyPair} aria-label={copy.copyPair} disabled={current === null} onClick={() => current && void writeCopy(buildJsonPairText(current))}>
+          <Braces size={14} aria-hidden="true" />
         </button>
-        <button type="button" disabled={current === null} onClick={() => current && void writeCopy(buildJsonValueText(current))}>
-          {copy.copyValue}
+        <button type="button" title={title.copyValue} aria-label={copy.copyValue} disabled={current === null} onClick={() => current && void writeCopy(buildJsonValueText(current))}>
+          <WholeWord size={14} aria-hidden="true" />
         </button>
-        <button type="button" disabled={current === null || current.segments.length === 0} onClick={() => current && removeRow(current)}>
+        <button type="button" title={title.delete} aria-label={copy.delete} disabled={current === null || current.segments.length === 0} onClick={() => current && removeRow(current)}>
           <Trash2 size={14} aria-hidden="true" />
-          {copy.delete}
         </button>
         <button
           type="button"
+          title={title.undo}
+          aria-label={copy.undo}
           disabled={document.undoInput === null}
           onClick={() => {
             const next = applyUndo(document)
@@ -156,30 +196,54 @@ export function JsonWorkbench(props: {
           }}
         >
           <Undo2 size={14} aria-hidden="true" />
-          {copy.undo}
         </button>
         <button
           type="button"
+          title={title.clear}
+          aria-label={copy.clear}
           onClick={() => {
             const next = applyInput(document, '')
             publish(next, { status: 'empty' })
             setQuery('')
           }}
         >
-          {copy.clear}
+          <Eraser size={14} aria-hidden="true" />
         </button>
-        <label className="json-keep">
-          <input
-            type="checkbox"
-            checked={document.keepEscapes}
-            onChange={(event) => onDocument({ ...document, keepEscapes: event.target.checked })}
-          />
-          {copy.keepEscapes}
-        </label>
+        <button
+          type="button"
+          title={title.keepEscapes}
+          aria-label={copy.keepEscapes}
+          aria-pressed={document.keepEscapes}
+          onClick={() => onDocument({ ...document, keepEscapes: !document.keepEscapes })}
+        >
+          <TextQuote size={14} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          title={title.decreaseFont(editorFontSize)}
+          aria-label={copy.decreaseFont(editorFontSize)}
+          disabled={editorFontSize <= 12}
+          onClick={() => changeFont(-1)}
+        >
+          <Minus size={14} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          title={title.increaseFont(editorFontSize)}
+          aria-label={copy.increaseFont(editorFontSize)}
+          disabled={editorFontSize >= 24}
+          onClick={() => changeFont(1)}
+        >
+          <Plus size={14} aria-hidden="true" />
+        </button>
       </div>
       <div ref={containerRef} className="json-panes">
         <div className="json-editor-pane" style={{ width: `${ratio * 100}%` }}>
-          <TextSlot value={document.input} onChange={(value) => onDocument(applyInput(document, value))} />
+          <TextSlot
+            value={document.input}
+            fontSize={editorFontSize}
+            onChange={(value) => onDocument(applyInput(document, value))}
+          />
         </div>
         <div
           className="json-splitter"

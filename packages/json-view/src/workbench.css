@@ -77,6 +77,15 @@
   cursor: not-allowed;
 }
 
+.json-toolbar button:focus {
+  outline: none;
+}
+
+.json-toolbar button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .json-keep {
   display: inline-flex;
   align-items: center;
