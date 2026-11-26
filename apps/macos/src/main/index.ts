@@ -4,6 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { choiceEffect, createCloseGate } from './close-gate'
 import { openJsonFromDisk } from './document-io'
+import { readEditorFontFile, writeEditorFontResult } from './editor-font-file'
 import { openDocument, saveDocument, saveDocumentAs, confirmDiscard, type WindowGrants } from './ipc-handlers'
 import { shouldBlockRequest, windowSecurityOptions } from './navigation'
 import { resolveRendererFile } from './renderer-path'
@@ -120,6 +121,8 @@ app.whenReady().then(() => {
   ipcMain.handle('jsonbranch:writeClipboard', async (_event, text: string) => {
     clipboard.writeText(text)
   })
+  ipcMain.handle('jsonbranch:readEditorFontSize', () => readEditorFontFile(app.getPath('userData')))
+  ipcMain.handle('jsonbranch:writeEditorFontSize', (_event, size: unknown) => writeEditorFontResult(app.getPath('userData'), size))
   ipcMain.handle('jsonbranch:confirmDiscard', async (event) => confirmDiscard(BrowserWindow.fromWebContents(event.sender)))
   ipcMain.on('jsonbranch:os-close-ready', (event) => {
     const owner = BrowserWindow.fromWebContents(event.sender)

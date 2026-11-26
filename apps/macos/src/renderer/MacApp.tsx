@@ -1,3 +1,5 @@
+import { messages } from '@jsonbranch/json-view'
+import { normalizeEditorFontSize } from '@jsonbranch/json-view/editor-font-size'
 import { useEffect, useState, type JSX } from 'react'
 import type { MacFileStamp, MacOpenResult, MacSaveResult } from '../shared/macos-api'
 import { MacShell } from './MacShell'
@@ -7,6 +9,9 @@ type Opened = { path: string; content: string; stamp: MacFileStamp; key: number 
 export function MacApp(): JSX.Element {
   const [opened, setOpened] = useState<Opened | null>(null)
   const [notice, setNotice] = useState('')
+  const [editorFontSize, setEditorFontSize] = useState(13)
+  const [fontNotice, setFontNotice] = useState('')
+  const locale = navigator.language.toLowerCase().startsWith('en') ? 'en' : 'zh'
   const api = window.jsonbranch
 
   useEffect(() => {
@@ -22,6 +27,38 @@ export function MacApp(): JSX.Element {
       }
     })
   }, [api])
+
+  useEffect(() => {
+    if (!api) {
+      return
+    }
+    let cancelled = false
+    void api.readEditorFontSize()
+      .then((size) => {
+        if (!cancelled) {
+          setEditorFontSize(normalizeEditorFontSize(size))
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setEditorFontSize(13)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [api])
+
+  async function changeFont(size: number): Promise<void> {
+    const next = normalizeEditorFontSize(size)
+    setEditorFontSize(next)
+    try {
+      const result = await api.writeEditorFontSize(next)
+      setFontNotice(result.ok ? '' : messages(locale).fontSaveFailed)
+    } catch {
+      setFontNotice(messages(locale).fontSaveFailed)
+    }
+  }
 
   async function open(): Promise<void> {
     const result: MacOpenResult = await api.openDocument()
@@ -65,11 +102,14 @@ export function MacApp(): JSX.Element {
   return (
     <div className="mac-app">
       {notice ? <p role="alert">{notice}</p> : null}
+      {fontNotice ? <p role="alert">{fontNotice}</p> : null}
       <MacShell
         key={opened?.key ?? 0}
         path={opened?.path ?? null}
         initial={opened?.content ?? ''}
-        locale={navigator.language.toLowerCase().startsWith('en') ? 'en' : 'zh'}
+        locale={locale}
+        editorFontSize={editorFontSize}
+        onEditorFontSize={(size) => void changeFont(size)}
         save={save}
         onOpen={() => void open()}
         onSaveAs={(content) => void saveAs(content)}

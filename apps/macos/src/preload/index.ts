@@ -17,6 +17,8 @@ const api: JsonbranchApi = {
     ipcRenderer.on('jsonbranch:request-save-close', listener)
     return () => ipcRenderer.removeListener('jsonbranch:request-save-close', listener)
   },
+  readEditorFontSize: () => ipcRenderer.invoke('jsonbranch:readEditorFontSize'),
+  writeEditorFontSize: (size: number) => ipcRenderer.invoke('jsonbranch:writeEditorFontSize', size),
   notifyOsCloseReady: () => {
     ipcRenderer.send('jsonbranch:os-close-ready')
   }

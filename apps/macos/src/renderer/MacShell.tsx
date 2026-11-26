@@ -39,6 +39,8 @@ export function MacShell(props: {
   onSaveAs?: (content: string) => void
   onClosed?: () => void
   onOsCloseReady?: () => void
+  editorFontSize?: number
+  onEditorFontSize?: (size: number) => void
 }): JSX.Element {
   const text = copy[props.locale]
   const [document, setDocument] = useState<JsonDocument>(() => createJsonDocument(props.initial))
@@ -188,6 +190,8 @@ export function MacShell(props: {
       <JsonWorkbench
         document={document}
         locale={props.locale}
+        editorFontSize={props.editorFontSize}
+        onEditorFontSize={props.onEditorFontSize}
         onDocument={setDocument}
         TextSlot={TextSlot}
         copyText={async (value) => {

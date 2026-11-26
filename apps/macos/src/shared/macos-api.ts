@@ -30,6 +30,8 @@ export type JsonbranchApi = {
   onOpenFromOs(callback: (result: MacOpenResult) => void): () => void
   onRequestSaveClose(callback: () => void): () => void
   notifyOsCloseReady(): void
+  readEditorFontSize(): Promise<number>
+  writeEditorFontSize(size: number): Promise<{ ok: boolean }>
 }
 
 export const jsonbranchMethods = [
@@ -40,7 +42,9 @@ export const jsonbranchMethods = [
   'confirmDiscard',
   'onOpenFromOs',
   'onRequestSaveClose',
-  'notifyOsCloseReady'
+  'notifyOsCloseReady',
+  'readEditorFontSize',
+  'writeEditorFontSize'
 ] as const
 
 declare global {
