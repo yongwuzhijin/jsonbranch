@@ -116,6 +116,19 @@ test('full tab formats pasted JSON without content scripts', async () => {
     await expect(page.locator('.view-lines')).not.toContainText('Beta')
     await page.getByRole('button', { name: label.undo, exact: true }).click()
     await expect(page.locator('.view-lines')).toContainText('"Beta"')
+    const increase = page.getByRole('button', { name: /^(增大字号，当前 13|Increase font size, current 13)$/ })
+    await increase.click()
+    await expect(page.getByRole('button', { name: /^(增大字号，当前 14|Increase font size, current 14)$/ })).toBeVisible()
+    await page.reload()
+    await expect(page.getByRole('button', { name: /^(增大字号，当前 14|Increase font size, current 14)$/ })).toBeVisible()
+    await expect
+      .poll(async () =>
+        background.evaluate(async () => {
+          const data = await chrome.storage.local.get('editorFontSize')
+          return data.editorFontSize
+        })
+      )
+      .toBe(14)
     expect(external).toEqual([])
   } finally {
     await context.close()

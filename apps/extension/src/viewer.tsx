@@ -1,9 +1,9 @@
 import { createJsonDocument, type JsonDocument } from '@jsonbranch/json-core'
-import { JsonWorkbench, TextSlot } from '@jsonbranch/json-view'
+import { JsonWorkbench, messages, TextSlot } from '@jsonbranch/json-view'
 import { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { chooseLocale } from '../../../src/shared/locale'
-import { chromeLocalArea, loadStoredDocument, saveStoredDocument, type StorageArea } from './storage'
+import { chromeLocalArea, loadEditorFontSize, loadStoredDocument, saveEditorFontSize, saveStoredDocument, type StorageArea } from './storage'
 
 function storedFrom(document: JsonDocument) {
   return {
@@ -18,6 +18,10 @@ export function ViewerApp({ area, locale }: { area: StorageArea; locale: 'zh' | 
   const [canPersist, setCanPersist] = useState(false)
   const [document, setDocument] = useState<JsonDocument>(createJsonDocument())
   const [notice, setNotice] = useState('')
+  const [fontSize, setFontSize] = useState(13)
+  const [fontReady, setFontReady] = useState(false)
+  const [fontNotice, setFontNotice] = useState('')
+  const fontHydrated = useRef(false)
   const copyTarget = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -49,6 +53,45 @@ export function ViewerApp({ area, locale }: { area: StorageArea; locale: 'zh' | 
   }, [area])
 
   useEffect(() => {
+    let cancelled = false
+    void loadEditorFontSize(area).then((size) => {
+      if (cancelled) {
+        return
+      }
+      setFontSize(size)
+      setFontReady(true)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [area])
+
+  useEffect(() => {
+    if (!fontReady) {
+      return
+    }
+    if (!fontHydrated.current) {
+      fontHydrated.current = true
+      return
+    }
+    let cancelled = false
+    void saveEditorFontSize(area, fontSize)
+      .then(() => {
+        if (!cancelled) {
+          setFontNotice('')
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFontNotice(messages(locale).fontSaveFailed)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [area, fontSize, fontReady, locale])
+
+  useEffect(() => {
     if (!ready || !canPersist) {
       return
     }
@@ -69,16 +112,19 @@ export function ViewerApp({ area, locale }: { area: StorageArea; locale: 'zh' | 
     }
   }, [area, document, ready, canPersist])
 
-  if (!ready) {
+  if (!ready || !fontReady) {
     return <p>正在读取本机记录</p>
   }
 
   return (
     <>
       {notice ? <p role="alert">{notice}</p> : null}
+      {fontNotice ? <p role="alert">{fontNotice}</p> : null}
       <JsonWorkbench
         document={document}
         locale={locale}
+        editorFontSize={fontSize}
+        onEditorFontSize={setFontSize}
         onDocument={setDocument}
         TextSlot={TextSlot}
         copyText={async (text) => {

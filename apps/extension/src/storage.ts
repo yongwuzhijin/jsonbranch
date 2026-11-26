@@ -1,3 +1,5 @@
+import { normalizeEditorFontSize } from '@jsonbranch/json-view/editor-font-size'
+
 export type StoredDocument = {
   input: string
   keepEscapes: boolean
@@ -15,6 +17,7 @@ export type SessionArea = {
 }
 
 export const DOCUMENT_KEY = 'document'
+export const EDITOR_FONT_KEY = 'editorFontSize'
 export const VIEWER_TAB_KEY = 'viewerTabId'
 
 const EMPTY_DOCUMENT: StoredDocument = {
@@ -42,6 +45,18 @@ export async function saveStoredDocument(area: StorageArea, document: StoredDocu
     keepEscapes: document.keepEscapes,
     showLineNumbers: document.showLineNumbers
   })
+}
+
+export async function loadEditorFontSize(area: StorageArea): Promise<number> {
+  try {
+    return normalizeEditorFontSize(await area.get(EDITOR_FONT_KEY))
+  } catch {
+    return 13
+  }
+}
+
+export async function saveEditorFontSize(area: StorageArea, size: number): Promise<void> {
+  await area.set(EDITOR_FONT_KEY, normalizeEditorFontSize(size))
 }
 
 export function chromeLocalArea(): StorageArea {

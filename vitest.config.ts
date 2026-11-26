@@ -5,10 +5,11 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: {
-      '@jsonbranch/json-core': path.resolve('packages/json-core/src/index.ts'),
-      '@jsonbranch/json-view': path.resolve('packages/json-view/src/index.ts')
-    }
+    alias: [
+      { find: '@jsonbranch/json-view/editor-font-size', replacement: path.resolve('packages/json-view/src/editor-font-size.ts') },
+      { find: '@jsonbranch/json-core', replacement: path.resolve('packages/json-core/src/index.ts') },
+      { find: '@jsonbranch/json-view', replacement: path.resolve('packages/json-view/src/index.ts') }
+    ]
   },
   test: {
     environment: 'jsdom',
