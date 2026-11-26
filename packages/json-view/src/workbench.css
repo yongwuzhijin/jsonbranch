@@ -1,19 +1,22 @@
 .json-workbench {
-  --bg: #f4f1ea;
-  --panel: #fffdf8;
-  --ink: #1c1917;
-  --muted: #78716c;
-  --line: #e7e5e4;
-  --accent: #166534;
-  --accent-soft: #dcfce7;
+  --bg: #f8f9fb;
+  --panel: #ffffff;
+  --ink: #111827;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --accent: #323256;
+  --accent-soft: #e8eaf4;
   --danger: #b91c1c;
-  --key: #9a3412;
-  --string: #166534;
+  --key: #323256;
+  --string: #047857;
   --number: #1d4ed8;
-  --boolean: #6d28d9;
-  --null: #78716c;
+  --boolean: #7c3aed;
+  --null: #9ca3af;
   --match: #fde68a;
   --match-active: #fdba74;
+  --hover: #eef0f3;
+  --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", "Microsoft YaHei", system-ui, sans-serif;
+  --mono: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   box-sizing: border-box;
   height: 100%;
   min-height: 0;
@@ -21,7 +24,8 @@
   flex-direction: column;
   background: var(--bg);
   color: var(--ink);
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", "Noto Serif SC", serif;
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
 }
 
 .json-workbench *,
@@ -33,12 +37,30 @@
 .json-toolbar,
 .json-search {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--line);
+  gap: 2px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 10px;
+  background: #f8f9fb;
+  border-bottom: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.json-tool-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.json-tool-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: #e5e7eb;
+  flex: none;
 }
 
 .json-toolbar button,
@@ -55,26 +77,38 @@
 }
 
 .json-toolbar button,
-.json-search button,
-.json-dialog button {
+.json-search button {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  min-height: 28px;
-  padding: 2px 8px;
-  border-color: var(--line);
-  background: #fff;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #374151;
+}
+
+.json-toolbar button:hover,
+.json-search button:hover {
+  background: var(--hover);
 }
 
 .json-toolbar button[aria-pressed='true'] {
   background: var(--accent-soft);
-  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .json-toolbar button:disabled,
 .json-search button:disabled {
-  opacity: 0.45;
+  opacity: 0.38;
   cursor: not-allowed;
+}
+
+.json-toolbar button:disabled:hover,
+.json-search button:disabled:hover {
+  background: transparent;
 }
 
 .json-toolbar button:focus {
@@ -110,6 +144,7 @@
 
 .json-editor-pane {
   background: var(--panel);
+  border-right: 0;
 }
 
 .json-editor-pane > * {
@@ -119,30 +154,49 @@
 
 .json-tree-pane {
   flex: 1;
-  border-left: 1px solid var(--line);
+  border-left: 0;
   background: var(--panel);
 }
 
 .json-splitter {
-  width: 6px;
+  width: 1px;
   flex: none;
   cursor: col-resize;
-  background: #d6d3d1;
+  background: #e5e7eb;
+  position: relative;
 }
 
-.json-splitter:hover {
-  background: var(--accent);
+.json-splitter::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  width: 7px;
+}
+
+.json-splitter:hover,
+.json-splitter:active {
+  background: #323256;
 }
 
 .json-search input {
   flex: 1;
-  min-width: 120px;
+  min-width: 0;
   height: 28px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 0 8px;
-  font: inherit;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink);
   background: #fff;
+}
+
+.json-search input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: transparent;
 }
 
 .json-search-count {
@@ -176,16 +230,20 @@
   display: flex;
   align-items: flex-start;
   gap: 4px;
-  min-height: 22px;
+  min-height: 26px;
   padding-right: 8px;
-  font-family: "IBM Plex Mono", "Sarasa Mono SC", "Noto Sans Mono", ui-monospace, monospace;
+  font-family: var(--mono);
   font-size: 13px;
-  line-height: 22px;
+  line-height: 26px;
+}
+
+.json-row:hover {
+  background: #f4f5f7;
 }
 
 .json-row.selected,
 .json-row.active-match {
-  background: #fff7ed;
+  background: #eef0f8;
 }
 
 .json-line-number {
@@ -211,7 +269,7 @@
   white-space: nowrap;
 }
 
-.json-key { color: var(--key); font-weight: 650; }
+.json-key { color: var(--key); font-weight: 600; }
 .json-index, .json-punct { color: var(--muted); }
 .json-string { color: var(--string); font-weight: 650; }
 .json-number { color: var(--number); }
@@ -286,7 +344,7 @@
   border-radius: 6px;
   background: #1c1917;
   color: #fffdf8;
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", "Noto Serif SC", serif;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", "Microsoft YaHei", system-ui, sans-serif;
   font-size: 12px;
   line-height: 1.35;
   pointer-events: none;
@@ -304,7 +362,7 @@
   padding: 12px;
   background: transparent;
   color: inherit;
-  font-family: "IBM Plex Mono", "Sarasa Mono SC", "Noto Sans Mono", ui-monospace, monospace;
+  font-family: var(--mono);
   font-size: 13px;
   line-height: 1.5;
 }

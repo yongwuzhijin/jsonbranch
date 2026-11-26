@@ -182,7 +182,7 @@ function JsonTreeLine({
       onClick={() => onSelect(row.path)}
     >
       {lineNumber !== null && <span className="json-line-number">{lineNumber}</span>}
-      <span style={{ width: row.depth * 12, flex: 'none' }} />
+      <span style={{ width: row.depth * 14, flex: 'none' }} />
       {row.isExpandable ? (
         <IconButton
           className="json-toggle"

@@ -142,7 +142,10 @@ export function JsonWorkbench(props: {
 
   return (
     <div className="json-workbench">
-      <div className="json-toolbar">
+      <div ref={containerRef} className="json-panes">
+        <div className="json-editor-pane" style={{ width: `${ratio * 100}%` }}>
+          <div className="json-toolbar">
+        <div className="json-tool-group">
         <IconButton hint={title.format} label={copy.format} disabled={result.status !== 'ok'} onClick={() => publish(applyFormat(document))}>
           <Wand2 size={14} aria-hidden="true" />
         </IconButton>
@@ -152,14 +155,9 @@ export function JsonWorkbench(props: {
         <IconButton hint={title.collapseAll} label={copy.collapseAll} onClick={() => setExpansion(collapseAllJsonNodes())}>
           <FoldVertical size={14} aria-hidden="true" />
         </IconButton>
-        <IconButton
-          hint={title.lineNumbers}
-          label={copy.lineNumbers}
-          aria-pressed={document.showLineNumbers}
-          onClick={() => onDocument({ ...document, showLineNumbers: !document.showLineNumbers })}
-        >
-          <ListOrdered size={14} aria-hidden="true" />
-        </IconButton>
+        </div>
+        <span className="json-tool-sep" aria-hidden="true" />
+        <div className="json-tool-group">
         <IconButton
           hint={title.copy}
           label={copy.copy}
@@ -181,6 +179,9 @@ export function JsonWorkbench(props: {
         <IconButton hint={title.copyValue} label={copy.copyValue} disabled={current === null} onClick={() => current && void writeCopy(buildJsonValueText(current))}>
           <WholeWord size={14} aria-hidden="true" />
         </IconButton>
+        </div>
+        <span className="json-tool-sep" aria-hidden="true" />
+        <div className="json-tool-group">
         <IconButton hint={title.delete} label={copy.delete} disabled={current === null || current.segments.length === 0} onClick={() => current && removeRow(current)}>
           <Trash2 size={14} aria-hidden="true" />
         </IconButton>
@@ -206,6 +207,17 @@ export function JsonWorkbench(props: {
         >
           <Eraser size={14} aria-hidden="true" />
         </IconButton>
+        </div>
+        <span className="json-tool-sep" aria-hidden="true" />
+        <div className="json-tool-group">
+        <IconButton
+          hint={title.lineNumbers}
+          label={copy.lineNumbers}
+          aria-pressed={document.showLineNumbers}
+          onClick={() => onDocument({ ...document, showLineNumbers: !document.showLineNumbers })}
+        >
+          <ListOrdered size={14} aria-hidden="true" />
+        </IconButton>
         <IconButton
           hint={title.keepEscapes}
           label={copy.keepEscapes}
@@ -214,6 +226,9 @@ export function JsonWorkbench(props: {
         >
           <TextQuote size={14} aria-hidden="true" />
         </IconButton>
+        </div>
+        <span className="json-tool-sep" aria-hidden="true" />
+        <div className="json-tool-group">
         <IconButton
           hint={title.decreaseFont(editorFontSize)}
           label={copy.decreaseFont(editorFontSize)}
@@ -230,9 +245,8 @@ export function JsonWorkbench(props: {
         >
           <Plus size={14} aria-hidden="true" />
         </IconButton>
+        </div>
       </div>
-      <div ref={containerRef} className="json-panes">
-        <div className="json-editor-pane" style={{ width: `${ratio * 100}%` }}>
           <TextSlot
             value={document.input}
             fontSize={editorFontSize}

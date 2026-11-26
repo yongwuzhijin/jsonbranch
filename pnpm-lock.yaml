@@ -87,6 +87,9 @@ importers:
       '@jsonbranch/json-view':
         specifier: workspace:*
         version: link:../../packages/json-view
+      lucide-react:
+        specifier: 0.577.0
+        version: 0.577.0(react@19.2.8)
       react:
         specifier: 19.2.8
         version: 19.2.8

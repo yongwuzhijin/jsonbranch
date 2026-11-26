@@ -1,7 +1,10 @@
 import { createJsonDocument, isDirty, type JsonDocument } from '@jsonbranch/json-core'
-import { JsonWorkbench, TextSlot } from '@jsonbranch/json-view'
+import { IconButton, JsonWorkbench, TextSlot } from '@jsonbranch/json-view'
+import { FileDown, FolderOpen, Save, X } from 'lucide-react'
 import { useEffect, useRef, useState, type JSX } from 'react'
 import type { MacFileStamp, MacSaveResult } from '../shared/macos-api'
+import logoUrl from '../../../../build/icon.png'
+import './mac-shell.css'
 
 type Save = (content: string, options?: { overwrite?: boolean }) => Promise<MacSaveResult>
 
@@ -14,6 +17,12 @@ const copy = {
     overwrite: '覆盖',
     dirty: '未存储',
     untitled: '未打开的文档',
+    open: '打开',
+    saveFile: '保存',
+    saveAs: '另存为',
+    openHint: '打开 ⌘O',
+    saveHint: '保存 ⌘S',
+    saveAsHint: '另存为 ⇧⌘S',
     ask: '关闭前要存储这份 JSON 吗？',
     stale: '磁盘上的文件已经变了。要覆盖它吗？'
   },
@@ -25,6 +34,12 @@ const copy = {
     overwrite: 'Overwrite',
     dirty: 'Unsaved',
     untitled: 'Untitled',
+    open: 'Open',
+    saveFile: 'Save',
+    saveAs: 'Save As',
+    openHint: 'Open ⌘O',
+    saveHint: 'Save ⌘S',
+    saveAsHint: 'Save As ⇧⌘S',
     ask: 'Save this JSON before closing?',
     stale: 'The file on disk has changed. Overwrite it?'
   }
@@ -45,7 +60,12 @@ export function MacShell(props: {
   const text = copy[props.locale]
   const [document, setDocument] = useState<JsonDocument>(() => createJsonDocument(props.initial))
   const [dialog, setDialog] = useState<'dirty' | 'stale' | null>(null)
-  const [intent, setIntent] = useState<'close' | 'open'>('close')
+  const [intent, setIntent] = useState<'close' | 'open' | 'stay'>('close')
+  const intentRef = useRef(intent)
+  function chooseIntent(next: 'close' | 'open' | 'stay'): void {
+    intentRef.current = next
+    setIntent(next)
+  }
   const [closed, setClosed] = useState(false)
   const [error, setError] = useState('')
   const osClose = useRef(false)
@@ -66,7 +86,11 @@ export function MacShell(props: {
     const result = await props.save(document.input, { overwrite })
     if (result.status === 'ok' || result.status === 'unchanged') {
       setDocument((current) => ({ ...current, baseline: current.input }))
-      if (intent === 'open' && !fromOs) {
+      if (!fromOs && intentRef.current === 'stay') {
+        setDialog(null)
+        return
+      }
+      if (intentRef.current === 'open' && !fromOs) {
         setDialog(null)
         props.onOpen?.()
         return
@@ -91,6 +115,7 @@ export function MacShell(props: {
   useEffect(() => {
     const onRequest = () => {
       osClose.current = true
+      intentRef.current = 'close'
       setIntent('close')
       void storeRef.current(false, true)
     }
@@ -106,47 +131,79 @@ export function MacShell(props: {
     return <p>{props.locale === 'zh' ? '已关闭' : 'Closed'}</p>
   }
 
+  const fileName = props.path?.split('/').at(-1) ?? text.untitled
+  const dirty = isDirty(document)
+  const canSave = dirty && (props.path !== null || props.onSaveAs !== undefined)
+
+  function saveHere(): void {
+    if (!dirty) {
+      return
+    }
+    if (props.path === null) {
+      props.onSaveAs?.(document.input)
+      return
+    }
+    osClose.current = false
+    chooseIntent('stay')
+    void store(false, false)
+  }
+
   return (
     <div className="mac-shell">
       <header className="mac-title">
-        <strong>{props.path ?? text.untitled}</strong>
-        {isDirty(document) ? <span>{text.dirty}</span> : null}
-        {props.onOpen ? (
-          <button
-            type="button"
+        <div className="mac-brand">
+          <img className="mac-logo" src={logoUrl} alt="" width={22} height={22} />
+          <span className="mac-brand-name">枝序</span>
+          <span className="mac-brand-en">JSONBranch</span>
+        </div>
+        <span className="mac-title-rule" aria-hidden="true" />
+        <div className="mac-file">
+          <span className="mac-filename">{fileName}</span>
+          {dirty ? <span className="mac-dirty">{text.dirty}</span> : null}
+        </div>
+        <div className="mac-actions">
+          {props.onOpen ? (
+            <IconButton
+              hint={text.openHint}
+              label={text.open}
+              onClick={() => {
+                if (!dirty) {
+                  props.onOpen?.()
+                  return
+                }
+                chooseIntent('open')
+                setDialog('dirty')
+              }}
+            >
+              <FolderOpen size={16} aria-hidden="true" />
+            </IconButton>
+          ) : null}
+          <IconButton hint={text.saveHint} label={text.saveFile} disabled={!canSave} onClick={saveHere}>
+            <Save size={16} aria-hidden="true" />
+          </IconButton>
+          {props.onSaveAs ? (
+            <IconButton hint={text.saveAsHint} label={text.saveAs} onClick={() => props.onSaveAs?.(document.input)}>
+              <FileDown size={16} aria-hidden="true" />
+            </IconButton>
+          ) : null}
+          <IconButton
+            hint={text.close}
+            label={text.close}
             onClick={() => {
-              if (!isDirty(document)) {
-                props.onOpen?.()
+              if (!dirty) {
+                finish()
                 return
               }
-              setIntent('open')
+              chooseIntent('close')
               setDialog('dirty')
             }}
           >
-            {props.locale === 'zh' ? '打开' : 'Open'}
-          </button>
-        ) : null}
-        {props.onSaveAs ? (
-          <button type="button" onClick={() => props.onSaveAs?.(document.input)}>
-            {props.locale === 'zh' ? '另存为' : 'Save As'}
-          </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={() => {
-            if (!isDirty(document)) {
-              finish()
-              return
-            }
-            setIntent('close')
-            setDialog('dirty')
-          }}
-        >
-          {text.close}
-        </button>
+            <X size={16} aria-hidden="true" />
+          </IconButton>
+        </div>
       </header>
       {dialog === 'dirty' && (
-        <div role="dialog" aria-label={text.ask}>
+        <div className="mac-dialog" role="dialog" aria-label={text.ask}>
           <p>{text.ask}</p>
           <button type="button" onClick={() => void store(false)}>
             {text.save}
@@ -176,12 +233,21 @@ export function MacShell(props: {
         </div>
       )}
       {dialog === 'stale' && (
-        <div role="dialog" aria-label={text.stale}>
+        <div className="mac-dialog" role="dialog" aria-label={text.stale}>
           <p>{text.stale}</p>
           <button type="button" onClick={() => void store(true)}>
             {text.overwrite}
           </button>
-          <button type="button" onClick={() => setDialog('dirty')}>
+          <button
+            type="button"
+            onClick={() => {
+              if (intentRef.current === 'stay') {
+                setDialog(null)
+                return
+              }
+              setDialog('dirty')
+            }}
+          >
             {text.cancel}
           </button>
         </div>

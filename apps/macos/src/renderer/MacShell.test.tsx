@@ -1,5 +1,7 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { TOOLTIP_DELAY_MS } from '@jsonbranch/json-view'
 import { MacShell } from './MacShell'
 
 afterEach(() => cleanup())
@@ -95,5 +97,49 @@ describe('MacShell', () => {
     expect(screen.queryByText('未存储')).toBeNull()
     expect(save).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: '增大字号，当前 14' })).toBeTruthy()
+  })
+
+  it('renders the logo and icon actions with fast tooltips', async () => {
+    vi.useFakeTimers()
+    try {
+      const save = vi.fn(async () => ({ status: 'ok' as const, path: '/tmp/a.json', stamp: { mtimeMs: 2, size: 2 } }))
+      const saveAs = vi.fn()
+      render(<MacShell path="/tmp/a.json" initial="{}" locale="zh" save={save} onOpen={() => {}} onSaveAs={saveAs} />)
+      const logo = document.querySelector('img.mac-logo') as HTMLImageElement | null
+      expect(logo?.getAttribute('src')).toBeTruthy()
+      expect(logo?.getAttribute('alt')).toBe('')
+      expect(logo?.getAttribute('width')).toBe('22')
+      expect(screen.getByText('枝序')).toBeTruthy()
+      expect(screen.getByText('JSONBranch')).toBeTruthy()
+      expect(screen.getByText('a.json')).toBeTruthy()
+      const css = readFileSync('apps/macos/src/renderer/mac-shell.css', 'utf8')
+      expect(css).toMatch(/\.mac-title\s*\{[^}]*height:\s*44px/)
+      expect(css).toContain('border-bottom: 1px solid #e5e7eb')
+      expect(css).toContain('-apple-system, BlinkMacSystemFont, "PingFang SC"')
+      for (const name of ['打开', '保存', '另存为', '关闭']) {
+        const button = screen.getByRole('button', { name })
+        expect(button.hasAttribute('title')).toBe(false)
+        expect(button.querySelector('svg')).toBeTruthy()
+      }
+      expect(screen.getByRole('button', { name: '保存' }).hasAttribute('disabled')).toBe(true)
+      const open = screen.getByRole('button', { name: '打开' })
+      fireEvent.pointerEnter(open.parentElement!)
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(TOOLTIP_DELAY_MS)
+      })
+      expect(screen.getByRole('tooltip').textContent).toBe('打开 ⌘O')
+      fireEvent.pointerLeave(open.parentElement!)
+      expect(screen.queryByRole('tooltip')).toBeNull()
+      fireEvent.change(screen.getByRole('textbox'), { target: { value: '{"a":1}' } })
+      fireEvent.click(screen.getByRole('button', { name: '保存' }))
+      expect(save).toHaveBeenCalledWith('{"a":1}', { overwrite: false })
+      await act(async () => {
+        await save.mock.results[0]?.value
+      })
+      expect(screen.queryByText('已关闭')).toBeNull()
+      expect(screen.queryByText('未存储')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

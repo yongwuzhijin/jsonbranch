@@ -123,7 +123,6 @@ describe('JsonWorkbench', () => {
       'wand-sparkles',
       'unfold-vertical',
       'fold-vertical',
-      'list-ordered',
       'copy',
       'route',
       'braces',
@@ -131,6 +130,7 @@ describe('JsonWorkbench', () => {
       'trash2',
       'undo2',
       'eraser',
+      'list-ordered',
       'text-quote',
       'minus',
       'plus'
@@ -257,7 +257,13 @@ describe('JsonWorkbench', () => {
     expect(visible).not.toContain('outline: none')
     const pressed = css.match(/\.json-toolbar button\[aria-pressed='true'\]\s*\{([^}]+)\}/)?.[1] ?? ''
     expect(pressed).toContain('background:')
-    expect(pressed).toContain('border-color:')
+    expect(pressed).toContain('color:')
+    expect(pressed).not.toContain('border')
+    expect(css).toMatch(/\.json-toolbar,\s*\.json-search\s*\{[^}]*height:\s*40px/)
+    expect(css).toContain('#f8f9fb')
+    expect(css).toContain('#e5e7eb')
+    expect(css).toContain('-apple-system, BlinkMacSystemFont, "PingFang SC"')
+    expect(css).toContain('"SF Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace')
     expect(css).toMatch(/\.json-row\s*\{[^}]*font-size:\s*13px/)
   })
 })

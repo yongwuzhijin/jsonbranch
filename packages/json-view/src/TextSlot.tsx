@@ -86,6 +86,7 @@ export function TextSlot(props: TextSlotProps & { createWorker?: () => Worker })
       onChange={(next) => onChange(next ?? '')}
       options={{
         fontSize,
+        fontFamily: '"SF Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
         minimap: { enabled: false },
         wordWrap: 'on',
         scrollBeyondLastLine: false,
