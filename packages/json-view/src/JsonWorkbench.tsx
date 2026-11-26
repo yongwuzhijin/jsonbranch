@@ -1,7 +1,9 @@
 import {
   applyDelete,
+  applyEditedValue,
   applyFormat,
   applyInput,
+  applyRenamedKey,
   applyUndo,
   buildJsonPairText,
   buildJsonValueText,
@@ -17,10 +19,12 @@ import {
   jsonToQuery,
   jsonToSchema,
   minifyJson,
+  locateJsonPath,
   parseJsonInput,
   pruneJsonSubtreeOverrides,
   pythonDictToJson,
-  rememberJsonHistory,
+  reviseActiveHistory,
+  snapshotJsonHistory,
   removeJsonHistory,
   toCopyablePath,
   toggleJsonNode,
@@ -117,10 +121,14 @@ export function JsonWorkbench(props: {
   const [rightFull, setRightFull] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(true)
   const [localHistory, setLocalHistory] = useState<JsonHistoryEntry[]>([])
+  const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
+  const [reveal, setReveal] = useState<{ start: number; end: number; nonce: number } | null>(null)
   const history = props.history ?? localHistory
   const historyRef = useRef(history)
   historyRef.current = history
+  const activeHistoryRef = useRef(activeHistoryId)
+  activeHistoryRef.current = activeHistoryId
   const sawInput = useRef(false)
 
   useEffect(() => {
@@ -221,7 +229,13 @@ export function JsonWorkbench(props: {
       return
     }
     const timer = window.setTimeout(() => {
-      commitHistory(rememberJsonHistory(historyRef.current, document.input, Date.now(), crypto.randomUUID()))
+      const revision = reviseActiveHistory(historyRef.current, activeHistoryRef.current, document.input, Date.now(), crypto.randomUUID())
+      if (revision.entries !== historyRef.current) {
+        commitHistory(revision.entries)
+      }
+      if (revision.activeId !== activeHistoryRef.current) {
+        setActiveHistoryId(revision.activeId)
+      }
     }, 1000)
     return () => window.clearTimeout(timer)
   }, [document.input, props.historyReady])
@@ -237,10 +251,27 @@ export function JsonWorkbench(props: {
           locale={locale}
           now={now}
           onCollapse={() => setHistoryOpen(false)}
-          onSave={() => commitHistory(rememberJsonHistory(history, document.input, Date.now(), crypto.randomUUID()))}
-          onClear={() => commitHistory([])}
-          onDelete={(id) => commitHistory(removeJsonHistory(history, id))}
-          onRestore={(text) => replaceText(text)}
+          onSave={() => {
+            const revision = snapshotJsonHistory(history, document.input, Date.now(), crypto.randomUUID())
+            if (revision.entries !== history) {
+              commitHistory(revision.entries)
+              setActiveHistoryId(revision.activeId)
+            }
+          }}
+          onClear={() => {
+            setActiveHistoryId(null)
+            commitHistory([])
+          }}
+          onDelete={(id) => {
+            if (id === activeHistoryId) {
+              setActiveHistoryId(null)
+            }
+            commitHistory(removeJsonHistory(history, id))
+          }}
+          onRestore={(text, id) => {
+            setActiveHistoryId(id)
+            replaceText(text)
+          }}
         />
       ) : null}
       <div ref={containerRef} className="json-panes">
@@ -257,7 +288,7 @@ export function JsonWorkbench(props: {
             <IconButton hint={title.minify} label={copy.minify} disabled={result.status !== 'ok'} onClick={() => applyConvert(minifyJson(document.input))}>
               <ChevronsDownUp size={14} aria-hidden="true" />
             </IconButton>
-            <IconButton hint={title.demo} label={copy.demo} onClick={() => replaceText(demoJson(indent))}>
+            <IconButton hint={title.demo} label={copy.demo} onClick={() => { setActiveHistoryId(null); replaceText(demoJson(indent)) }}>
               <Lightbulb size={14} aria-hidden="true" />
             </IconButton>
             <span className="json-tool-sep" aria-hidden="true" />
@@ -279,6 +310,7 @@ export function JsonWorkbench(props: {
               hint={title.clear}
               label={copy.clear}
               onClick={() => {
+                setActiveHistoryId(null)
                 const next = applyInput(document, '')
                 publish(next, { status: 'empty' })
                 setQuery('')
@@ -287,11 +319,14 @@ export function JsonWorkbench(props: {
               <Eraser size={14} aria-hidden="true" />
             </IconButton>
           </div>
-          <TextSlot
-            value={document.input}
-            fontSize={editorFontSize}
-            onChange={(value) => onDocument(applyInput(document, value))}
-          />
+          <div className="json-editor-body">
+            <TextSlot
+              value={document.input}
+              fontSize={editorFontSize}
+              reveal={reveal}
+              onChange={(value) => onDocument(applyInput(document, value))}
+            />
+          </div>
           <div className="json-convert">
             <button type="button" onClick={() => replaceText(chineseToUnicode(document.input))}>{copy.convertChinese}</button>
             <button type="button" onClick={() => replaceText(unicodeToChinese(document.input))}>{copy.convertUnicode}</button>
@@ -425,10 +460,10 @@ export function JsonWorkbench(props: {
             </IconButton>
           </div>
           {view === 'schema' ? (
-            result.status === 'ok' ? <pre className="json-schema">{schemaText}</pre> : <div className="json-tree-message">{result.status === 'error' ? describeJsonParseError(result, locale) : copy.schemaNeedsJson}</div>
+            result.status === 'ok' ? <pre className="json-schema">{schemaText}</pre> : result.status === 'empty' ? <JsonEmpty message={copy.schemaNeedsJson} /> : <div className="json-tree-message error">{describeJsonParseError(result, locale)}</div>
           ) : (
             <>
-              {result.status === 'empty' && <div className="json-tree-message">{copy.empty}</div>}
+              {result.status === 'empty' && <JsonEmpty message={copy.empty} />}
               {result.status === 'error' && <div className="json-tree-message error">{describeJsonParseError(result, locale)}</div>}
               {result.status === 'ok' && (
                 <JsonTreeView
@@ -439,7 +474,25 @@ export function JsonWorkbench(props: {
                   activeMatch={found.active}
                   selectedPath={selectedPath}
                   onToggle={(path) => setExpansion((prev) => toggleJsonNode(prev, path))}
-                  onSelect={setSelectedPath}
+                  onSelect={(row) => {
+                    setSelectedPath(row.path)
+                    const range = locateJsonPath(document.input, row.segments)
+                    if (range) {
+                      setReveal({ start: range.start, end: range.end, nonce: Date.now() })
+                    }
+                  }}
+                  onRenameKey={(row, nextKey) => {
+                    const next = applyRenamedKey(document, row.segments, nextKey, indent)
+                    if (next && next !== document) {
+                      publish(next, parseJsonInput(next.input, { keepEscapes: next.keepEscapes }))
+                    }
+                  }}
+                  onEditValue={(row, raw) => {
+                    const next = applyEditedValue(document, row.segments, raw, indent)
+                    if (next && next !== document) {
+                      publish(next, parseJsonInput(next.input, { keepEscapes: next.keepEscapes }))
+                    }
+                  }}
                   onCopyPath={(row) => void writeCopy(toCopyablePath(row.path))}
                   onCopyPair={(row) => void writeCopy(buildJsonPairText(row))}
                   onCopyValue={(row) => void writeCopy(buildJsonValueText(row))}
@@ -454,6 +507,25 @@ export function JsonWorkbench(props: {
       <div className="json-status" role="status">
         {notice}
       </div>
+    </div>
+  )
+}
+
+function JsonEmpty(props: { message: string }): JSX.Element {
+  return (
+    <div className="json-empty">
+      <svg viewBox="0 0 180 128" width="168" height="120" aria-hidden="true">
+        <path d="M90 112 C90 86 90 74 90 52" fill="none" stroke="#d6d8e2" strokeWidth="2" />
+        <path d="M90 74 C68 62 46 58 32 40" fill="none" stroke="#c5c8d4" strokeWidth="2" />
+        <path d="M90 66 C114 52 136 44 154 28" fill="none" stroke="#c5c8d4" strokeWidth="2" />
+        <path d="M90 92 C116 88 138 100 158 94" fill="none" stroke="#e5e7eb" strokeWidth="2" />
+        <circle cx="90" cy="112" r="5" fill="#323256" />
+        <circle cx="90" cy="52" r="4" fill="#323256" />
+        <circle cx="32" cy="40" r="3.5" fill="#9aa0b4" />
+        <circle cx="154" cy="28" r="3.5" fill="#323256" />
+        <circle cx="158" cy="94" r="3" fill="#c5c8d4" />
+      </svg>
+      <p>{props.message}</p>
     </div>
   )
 }

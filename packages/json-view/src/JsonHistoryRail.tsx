@@ -1,6 +1,6 @@
 import { BookmarkPlus, PanelLeftClose, Trash, X } from 'lucide-react'
 import type { JsonHistoryEntry } from '@jsonbranch/json-core'
-import { formatHistoryAge, formatHistoryBytes, formatHistoryClock } from '@jsonbranch/json-core'
+import { formatHistoryAge, formatHistoryBytes, formatHistoryClock, formatHistoryPreview } from '@jsonbranch/json-core'
 import type { JSX } from 'react'
 import { messages, type WorkbenchLocale } from './messages'
 import { IconButton } from './Tooltip'
@@ -13,7 +13,7 @@ export function JsonHistoryRail(props: {
   onSave(): void
   onClear(): void
   onDelete(id: string): void
-  onRestore(text: string): void
+  onRestore(text: string, id: string): void
 }): JSX.Element {
   const copy = messages(props.locale)
   const hint = messages('zh')
@@ -34,10 +34,10 @@ export function JsonHistoryRail(props: {
       <div className="json-history-list">
         {props.entries.length === 0 ? <p className="json-history-empty">{copy.historyEmpty}</p> : null}
         {props.entries.map((entry) => {
-          const preview = entry.text.trim().split('\n')[0]?.slice(0, 28) || entry.text.slice(0, 28)
+          const preview = formatHistoryPreview(entry.text)
           return (
             <div className="json-history-card" key={entry.id}>
-              <button type="button" className="json-history-open" onClick={() => props.onRestore(entry.text)}>
+              <button type="button" className="json-history-open" onClick={() => props.onRestore(entry.text, entry.id)}>
                 <span>{formatHistoryAge(entry.savedAt, props.now, props.locale)}</span>
                 <span className="json-history-preview">{preview}</span>
                 <span className="json-history-meta">{formatHistoryClock(entry.savedAt)}</span>

@@ -9,7 +9,7 @@ import {
 } from '@jsonbranch/json-core'
 import { observeElementRect, useVirtualizer } from '@tanstack/react-virtual'
 import { ChevronDown, ChevronRight, Braces, Route, Trash2, WholeWord } from 'lucide-react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { HighlightedText } from './HighlightedText'
 import { messages, type WorkbenchLocale } from './messages'
 import { IconButton } from './Tooltip'
@@ -25,7 +25,9 @@ type JsonTreeViewProps = {
   activeMatch: JsonSearchMatch | null
   selectedPath: string | null
   onToggle(path: string): void
-  onSelect(path: string): void
+  onSelect(row: JsonTreeRow): void
+  onRenameKey?(row: JsonTreeRow, nextKey: string): void
+  onEditValue?(row: JsonTreeRow, raw: string): void
   onCopyPath(row: JsonTreeRow): void
   onCopyPair(row: JsonTreeRow): void
   onCopyValue(row: JsonTreeRow): void
@@ -52,6 +54,8 @@ export function JsonTreeView({
   selectedPath,
   onToggle,
   onSelect,
+  onRenameKey,
+  onEditValue,
   onCopyPath,
   onCopyPair,
   onCopyValue,
@@ -75,6 +79,7 @@ export function JsonTreeView({
       return observeElementRect(instance, callback)
     }
   })
+  const [editing, setEditing] = useState<{ path: string; field: 'key' | 'value'; draft: string } | null>(null)
   const activeMatchPath = activeMatch?.path ?? null
   const lastScrollKeyRef = useRef<string | null>(null)
   useEffect(() => {
@@ -116,7 +121,18 @@ export function JsonTreeView({
                 copy={copy}
                 hint={hint}
                 onToggle={onToggle}
+                editing={editing?.path === row.path ? editing : null}
                 onSelect={onSelect}
+                onBeginEdit={(field, draft) => setEditing({ path: row.path, field, draft })}
+                onCancelEdit={() => setEditing(null)}
+                onCommitEdit={(field, raw) => {
+                  setEditing(null)
+                  if (field === 'key') {
+                    onRenameKey?.(row, raw)
+                    return
+                  }
+                  onEditValue?.(row, raw)
+                }}
                 onCopyPath={onCopyPath}
                 onCopyPair={onCopyPair}
                 onCopyValue={onCopyValue}
@@ -136,10 +152,14 @@ function JsonTreeLine({
   query,
   activeMatch,
   selected,
+  editing,
   copy,
   hint,
   onToggle,
   onSelect,
+  onBeginEdit,
+  onCancelEdit,
+  onCommitEdit,
   onCopyPath,
   onCopyPair,
   onCopyValue,
@@ -150,10 +170,14 @@ function JsonTreeLine({
   query: string
   activeMatch: JsonSearchMatch | null
   selected: boolean
+  editing: { field: 'key' | 'value'; draft: string } | null
   copy: ReturnType<typeof messages>
   hint: ReturnType<typeof messages>
   onToggle(path: string): void
-  onSelect(path: string): void
+  onSelect(row: JsonTreeRow): void
+  onBeginEdit(field: 'key' | 'value', draft: string): void
+  onCancelEdit(): void
+  onCommitEdit(field: 'key' | 'value', raw: string): void
   onCopyPath(row: JsonTreeRow): void
   onCopyPair(row: JsonTreeRow): void
   onCopyValue(row: JsonTreeRow): void
@@ -179,7 +203,7 @@ function JsonTreeLine({
     <div
       className={['json-row', selected ? 'selected' : '', activeMatch?.path === row.path ? 'active-match' : ''].filter(Boolean).join(' ')}
       data-testid={testId}
-      onClick={() => onSelect(row.path)}
+      onClick={() => onSelect(row)}
     >
       {lineNumber !== null && <span className="json-line-number">{lineNumber}</span>}
       <span style={{ width: row.depth * 14, flex: 'none' }} />
@@ -202,15 +226,51 @@ function JsonTreeLine({
       <div className="json-token">
         {labelText !== null && (
           <>
-            <span className={row.labelKind === 'index' ? 'json-index' : 'json-key'}>
-              <HighlightedText text={labelText} ranges={labelRanges} activeRange={activeRangeFor(row, activeMatch, 'key')} />
-            </span>
+            {editing?.field === 'key' ? (
+              <InlineEdit
+                label={copy.editKey}
+                draft={editing.draft}
+                onCancel={onCancelEdit}
+                onCommit={(raw) => onCommitEdit('key', raw)}
+              />
+            ) : (
+              <span
+                className={row.labelKind === 'index' ? 'json-index' : 'json-key'}
+                onDoubleClick={(event) => {
+                  if (row.labelKind !== 'key' || row.label === null) {
+                    return
+                  }
+                  event.stopPropagation()
+                  onBeginEdit('key', row.label)
+                }}
+              >
+                <HighlightedText text={labelText} ranges={labelRanges} activeRange={activeRangeFor(row, activeMatch, 'key')} />
+              </span>
+            )}
             <span className="json-punct">: </span>
           </>
         )}
-        <span className={isContainer ? 'json-punct' : `json-${row.kind}`}>
-          <HighlightedText text={valueText} ranges={valueRanges} activeRange={activeRangeFor(row, activeMatch, 'value')} />
-        </span>
+        {editing?.field === 'value' ? (
+          <InlineEdit
+            label={copy.editValue}
+            draft={editing.draft}
+            onCancel={onCancelEdit}
+            onCommit={(raw) => onCommitEdit('value', raw)}
+          />
+        ) : (
+          <span
+            className={isContainer ? 'json-punct' : `json-${row.kind}`}
+            onDoubleClick={(event) => {
+              if (isContainer) {
+                return
+              }
+              event.stopPropagation()
+              onBeginEdit('value', formatJsonScalarText(row.value, row.kind))
+            }}
+          >
+            <HighlightedText text={valueText} ranges={valueRanges} activeRange={activeRangeFor(row, activeMatch, 'value')} />
+          </span>
+        )}
       </div>
       <div className="json-row-actions">
         <IconButton hint={hint.copyPair} label={`${copy.copyPair} ${row.path || '$'}`} onClick={() => onCopyPair(row)}>
@@ -229,5 +289,39 @@ function JsonTreeLine({
         )}
       </div>
     </div>
+  )
+}
+
+function InlineEdit(props: { label: string; draft: string; onCommit(raw: string): void; onCancel(): void }) {
+  const [value, setValue] = useState(props.draft)
+  const done = useRef(false)
+  function commit(): void {
+    if (done.current) {
+      return
+    }
+    done.current = true
+    props.onCommit(value)
+  }
+  return (
+    <input
+      className="json-inline-edit"
+      aria-label={props.label}
+      value={value}
+      autoFocus
+      onClick={(event) => event.stopPropagation()}
+      onDoubleClick={(event) => event.stopPropagation()}
+      onChange={(event) => setValue(event.target.value)}
+      onBlur={() => commit()}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault()
+          commit()
+        } else if (event.key === 'Escape') {
+          event.preventDefault()
+          done.current = true
+          props.onCancel()
+        }
+      }}
+    />
   )
 }

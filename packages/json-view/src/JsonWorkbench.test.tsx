@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
+import type { TextSlotProps } from './json-view-model'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createJsonDocument, isDirty, type JsonDocument } from '@jsonbranch/json-core'
+import { createJsonDocument, isDirty, locateJsonPath, type JsonDocument } from '@jsonbranch/json-core'
 import { JsonWorkbench } from './JsonWorkbench'
 import { TOOLTIP_DELAY_MS } from './Tooltip'
 
@@ -54,7 +55,7 @@ describe('JsonWorkbench', () => {
     const copyText = vi.fn(async () => {})
     render(<Host copyText={copyText} />)
     fireEvent.click(screen.getByRole('button', { name: '清空' }))
-    expect(screen.getByText('没有内容')).toBeTruthy()
+    expect(screen.getByText('把 JSON 放进左侧，树会从这里长出来')).toBeTruthy()
     fireEvent.change(screen.getByLabelText('json'), { target: { value: '{ /* x */ }' } })
     expect(await screen.findByText(/注释/)).toBeTruthy()
   })
@@ -300,6 +301,35 @@ describe('JsonWorkbench', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it('renames a key from the tree and reveals its source range', () => {
+    const revealed: number[] = []
+    function EditHost() {
+      const [document, setDocument] = useState(createJsonDocument('{"name":"Beta"}'))
+      return (
+        <JsonWorkbench
+          document={document}
+          locale="zh"
+          onDocument={setDocument}
+          copyText={async () => {}}
+          TextSlot={(props: TextSlotProps) => {
+            if (props.reveal) {
+              revealed.push(props.reveal.start)
+            }
+            return <textarea aria-label="json" value={props.value} readOnly />
+          }}
+        />
+      )
+    }
+    render(<EditHost />)
+    fireEvent.click(screen.getByTestId('json-tree-row-name'))
+    expect(revealed.at(-1)).toBe(locateJsonPath('{"name":"Beta"}', ['name'])?.start)
+    fireEvent.doubleClick(screen.getByTestId('json-tree-row-name').querySelector('.json-key')!)
+    const key = screen.getByRole('textbox', { name: '编辑键名' })
+    fireEvent.change(key, { target: { value: 'title' } })
+    fireEvent.keyDown(key, { key: 'Enter' })
+    expect((screen.getByLabelText('json') as HTMLTextAreaElement).value).toContain('"title"')
   })
 })
 
