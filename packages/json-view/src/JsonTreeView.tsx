@@ -8,10 +8,11 @@ import {
   type JsonTreeRow
 } from '@jsonbranch/json-core'
 import { observeElementRect, useVirtualizer } from '@tanstack/react-virtual'
-import { ChevronDown, ChevronRight, Braces, Route, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, Braces, Route, Trash2, WholeWord } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
 import { HighlightedText } from './HighlightedText'
 import { messages, type WorkbenchLocale } from './messages'
+import { IconButton } from './Tooltip'
 
 const ROW_HEIGHT = 22
 const NO_RANGES: JsonTextRange[] = []
@@ -57,6 +58,7 @@ export function JsonTreeView({
   onDelete
 }: JsonTreeViewProps) {
   const copy = messages(locale)
+  const hint = messages('zh')
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -112,6 +114,7 @@ export function JsonTreeView({
                 activeMatch={activeMatch}
                 selected={selectedPath === row.path}
                 copy={copy}
+                hint={hint}
                 onToggle={onToggle}
                 onSelect={onSelect}
                 onCopyPath={onCopyPath}
@@ -134,6 +137,7 @@ function JsonTreeLine({
   activeMatch,
   selected,
   copy,
+  hint,
   onToggle,
   onSelect,
   onCopyPath,
@@ -147,6 +151,7 @@ function JsonTreeLine({
   activeMatch: JsonSearchMatch | null
   selected: boolean
   copy: ReturnType<typeof messages>
+  hint: ReturnType<typeof messages>
   onToggle(path: string): void
   onSelect(path: string): void
   onCopyPath(row: JsonTreeRow): void
@@ -179,10 +184,10 @@ function JsonTreeLine({
       {lineNumber !== null && <span className="json-line-number">{lineNumber}</span>}
       <span style={{ width: row.depth * 12, flex: 'none' }} />
       {row.isExpandable ? (
-        <button
-          type="button"
+        <IconButton
           className="json-toggle"
-          aria-label={row.isCollapsed ? copy.expandNode : copy.collapseNode}
+          hint={row.isCollapsed ? hint.expandNode : hint.collapseNode}
+          label={row.isCollapsed ? copy.expandNode : copy.collapseNode}
           aria-expanded={!row.isCollapsed}
           onClick={(event) => {
             event.stopPropagation()
@@ -190,7 +195,7 @@ function JsonTreeLine({
           }}
         >
           {row.isCollapsed ? <ChevronRight size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
-        </button>
+        </IconButton>
       ) : (
         <span className="json-toggle-spacer" />
       )}
@@ -208,19 +213,19 @@ function JsonTreeLine({
         </span>
       </div>
       <div className="json-row-actions">
-        <button type="button" aria-label={`${copy.copyPair} ${row.path || '$'}`} title={copy.copyPair} onClick={() => onCopyPair(row)}>
+        <IconButton hint={hint.copyPair} label={`${copy.copyPair} ${row.path || '$'}`} onClick={() => onCopyPair(row)}>
           <Braces size={13} aria-hidden="true" />
-        </button>
-        <button type="button" aria-label={`${copy.copyPath} ${row.path || '$'}`} title={copy.copyPath} onClick={() => onCopyPath(row)}>
+        </IconButton>
+        <IconButton hint={hint.copyPath} label={`${copy.copyPath} ${row.path || '$'}`} onClick={() => onCopyPath(row)}>
           <Route size={13} aria-hidden="true" />
-        </button>
-        <button type="button" aria-label={`${copy.copyValue} ${row.path || '$'}`} title={copy.copyValue} onClick={() => onCopyValue(row)}>
-          <Braces size={13} aria-hidden="true" />
-        </button>
+        </IconButton>
+        <IconButton hint={hint.copyValue} label={`${copy.copyValue} ${row.path || '$'}`} onClick={() => onCopyValue(row)}>
+          <WholeWord size={13} aria-hidden="true" />
+        </IconButton>
         {row.segments.length > 0 && (
-          <button type="button" aria-label={`${copy.delete} ${row.path || '$'}`} title={copy.delete} onClick={() => onDelete(row)}>
+          <IconButton hint={hint.delete} label={`${copy.delete} ${row.path || '$'}`} onClick={() => onDelete(row)}>
             <Trash2 size={13} aria-hidden="true" />
-          </button>
+          </IconButton>
         )}
       </div>
     </div>

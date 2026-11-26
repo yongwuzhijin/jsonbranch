@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createJsonDocument, isDirty, type JsonDocument } from '@jsonbranch/json-core'
 import { JsonWorkbench } from './JsonWorkbench'
+import { TOOLTIP_DELAY_MS } from './Tooltip'
 
 afterEach(() => cleanup())
 
@@ -63,42 +64,82 @@ describe('JsonWorkbench', () => {
     const names = ['格式化', '全部展开', '全部折叠', '行号', '复制', '复制路径', '复制键值对', '复制值', '删除', '撤销', '清空', '保留转义']
     for (const name of names) {
       const button = screen.getByRole('button', { name })
-      expect(button.getAttribute('title')).toBe(name)
+      expect(button.hasAttribute('title')).toBe(false)
       expect(button.textContent?.includes(name)).toBe(false)
       expect(button.querySelector('svg')).toBeTruthy()
     }
+    expect(document.querySelector('.json-workbench [title]')).toBeNull()
     expect(screen.queryByRole('checkbox', { name: '保留转义' })).toBeNull()
   })
 
-  it('uses Chinese titles and English accessible names', () => {
-    render(
-      <JsonWorkbench
-        document={createJsonDocument('{"name":"Beta"}')}
-        locale="en"
-        onDocument={() => {}}
-        copyText={async () => {}}
-        TextSlot={() => <textarea aria-label="json" />}
-      />
-    )
-    const pairs = [
-      ['Format', '格式化'],
-      ['Expand all', '全部展开'],
-      ['Collapse all', '全部折叠'],
-      ['Line numbers', '行号'],
-      ['Copy', '复制'],
-      ['Copy path', '复制路径'],
-      ['Copy pair', '复制键值对'],
-      ['Copy value', '复制值'],
-      ['Delete', '删除'],
-      ['Undo', '撤销'],
-      ['Clear', '清空'],
-      ['Keep escapes', '保留转义']
-    ]
-    for (const [label, title] of pairs) {
-      expect(screen.getByRole('button', { name: label }).getAttribute('title')).toBe(title)
+  it('uses Chinese tooltips and English accessible names', async () => {
+    vi.useFakeTimers()
+    try {
+      render(
+        <JsonWorkbench
+          document={createJsonDocument('{"name":"Beta"}')}
+          locale="en"
+          onDocument={() => {}}
+          copyText={async () => {}}
+          TextSlot={() => <textarea aria-label="json" />}
+        />
+      )
+      const pairs = [
+        ['Format', '格式化'],
+        ['Expand all', '全部展开'],
+        ['Collapse all', '全部折叠'],
+        ['Line numbers', '行号'],
+        ['Copy', '复制'],
+        ['Copy path', '复制路径'],
+        ['Copy pair', '复制键值对'],
+        ['Copy value', '复制值'],
+        ['Delete', '删除'],
+        ['Undo', '撤销'],
+        ['Clear', '清空'],
+        ['Keep escapes', '保留转义'],
+        ['Decrease font size, current 13', '减小字号，当前 13'],
+        ['Increase font size, current 13', '增大字号，当前 13']
+      ]
+      for (const [label, hint] of pairs) {
+        const button = screen.getByRole('button', { name: label })
+        expect(button.hasAttribute('title')).toBe(false)
+        fireEvent.pointerEnter(button.parentElement!)
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(TOOLTIP_DELAY_MS)
+        })
+        expect(screen.getByRole('tooltip').textContent).toBe(hint)
+        fireEvent.pointerLeave(button.parentElement!)
+        expect(screen.queryByRole('tooltip')).toBeNull()
+      }
+    } finally {
+      vi.useRealTimers()
     }
-    expect(screen.getByRole('button', { name: 'Decrease font size, current 13' }).getAttribute('title')).toBe('减小字号，当前 13')
-    expect(screen.getByRole('button', { name: 'Increase font size, current 13' }).getAttribute('title')).toBe('增大字号，当前 13')
+  })
+
+  it('gives every toolbar button and every row action its own icon', () => {
+    render(<Host copyText={async () => {}} />)
+    const toolbarIcons = iconNames(document.querySelector('.json-toolbar'))
+    expect(toolbarIcons).toEqual([
+      'wand-sparkles',
+      'unfold-vertical',
+      'fold-vertical',
+      'list-ordered',
+      'copy',
+      'route',
+      'braces',
+      'whole-word',
+      'trash2',
+      'undo2',
+      'eraser',
+      'text-quote',
+      'minus',
+      'plus'
+    ])
+    expect(new Set(toolbarIcons).size).toBe(toolbarIcons.length)
+    const rowIcons = iconNames(screen.getByTestId('json-tree-row-name').querySelector('.json-row-actions'))
+    expect(rowIcons).toEqual(['braces', 'route', 'whole-word', 'trash2'])
+    expect(new Set(rowIcons).size).toBe(rowIcons.length)
+    expect(rowIcons.filter((name) => name === 'braces')).toEqual(['braces'])
   })
 
   it('toggles line numbers and keep escapes without changing the text', () => {
@@ -220,3 +261,10 @@ describe('JsonWorkbench', () => {
     expect(css).toMatch(/\.json-row\s*\{[^}]*font-size:\s*13px/)
   })
 })
+
+function iconNames(root: ParentNode | null): string[] {
+  return [...(root?.querySelectorAll('button svg') ?? [])].map((svg) => {
+    const match = svg.getAttribute('class')?.match(/lucide-([a-z0-9-]+)/)
+    return match?.[1] ?? ''
+  })
+}

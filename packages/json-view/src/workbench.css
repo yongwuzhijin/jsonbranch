@@ -258,6 +258,42 @@
   display: none;
 }
 
+.json-tooltip-anchor {
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.json-row > .json-tooltip-anchor {
+  flex: none;
+  width: 16px;
+  height: 22px;
+}
+
+.json-row > .json-tooltip-anchor > .json-toggle {
+  width: 100%;
+  height: 100%;
+}
+
+.json-tooltip-anchor:has(button:disabled) > button {
+  pointer-events: none;
+}
+
+.json-tooltip {
+  position: fixed;
+  z-index: 30;
+  margin: 0;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: #1c1917;
+  color: #fffdf8;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti SC", "Noto Serif SC", serif;
+  font-size: 12px;
+  line-height: 1.35;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(28, 25, 23, 0.16);
+}
+
 .json-fallback {
   width: 100%;
   height: 100%;

@@ -43,6 +43,7 @@ import { normalizeEditorFontSize, stepEditorFontSize } from './editor-font-size'
 import { JsonTreeView } from './JsonTreeView'
 import { messages } from './messages'
 import { searchState, type CopyText, type TextSlotProps } from './json-view-model'
+import { IconButton } from './Tooltip'
 import './workbench.css'
 
 const PARSE_DEBOUNCE_MS = 200
@@ -142,28 +143,26 @@ export function JsonWorkbench(props: {
   return (
     <div className="json-workbench">
       <div className="json-toolbar">
-        <button type="button" title={title.format} aria-label={copy.format} disabled={result.status !== 'ok'} onClick={() => publish(applyFormat(document))}>
+        <IconButton hint={title.format} label={copy.format} disabled={result.status !== 'ok'} onClick={() => publish(applyFormat(document))}>
           <Wand2 size={14} aria-hidden="true" />
-        </button>
-        <button type="button" title={title.expandAll} aria-label={copy.expandAll} onClick={() => setExpansion(expandAllJsonNodes())}>
+        </IconButton>
+        <IconButton hint={title.expandAll} label={copy.expandAll} onClick={() => setExpansion(expandAllJsonNodes())}>
           <UnfoldVertical size={14} aria-hidden="true" />
-        </button>
-        <button type="button" title={title.collapseAll} aria-label={copy.collapseAll} onClick={() => setExpansion(collapseAllJsonNodes())}>
+        </IconButton>
+        <IconButton hint={title.collapseAll} label={copy.collapseAll} onClick={() => setExpansion(collapseAllJsonNodes())}>
           <FoldVertical size={14} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          title={title.lineNumbers}
-          aria-label={copy.lineNumbers}
+        </IconButton>
+        <IconButton
+          hint={title.lineNumbers}
+          label={copy.lineNumbers}
           aria-pressed={document.showLineNumbers}
           onClick={() => onDocument({ ...document, showLineNumbers: !document.showLineNumbers })}
         >
           <ListOrdered size={14} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          title={title.copy}
-          aria-label={copy.copy}
+        </IconButton>
+        <IconButton
+          hint={title.copy}
+          label={copy.copy}
           disabled={result.status !== 'ok'}
           onClick={() => {
             if (result.status === 'ok') {
@@ -172,23 +171,22 @@ export function JsonWorkbench(props: {
           }}
         >
           <Copy size={14} aria-hidden="true" />
-        </button>
-        <button type="button" title={title.copyPath} aria-label={copy.copyPath} disabled={current === null} onClick={() => current && void writeCopy(toCopyablePath(current.path))}>
+        </IconButton>
+        <IconButton hint={title.copyPath} label={copy.copyPath} disabled={current === null} onClick={() => current && void writeCopy(toCopyablePath(current.path))}>
           <Route size={14} aria-hidden="true" />
-        </button>
-        <button type="button" title={title.copyPair} aria-label={copy.copyPair} disabled={current === null} onClick={() => current && void writeCopy(buildJsonPairText(current))}>
+        </IconButton>
+        <IconButton hint={title.copyPair} label={copy.copyPair} disabled={current === null} onClick={() => current && void writeCopy(buildJsonPairText(current))}>
           <Braces size={14} aria-hidden="true" />
-        </button>
-        <button type="button" title={title.copyValue} aria-label={copy.copyValue} disabled={current === null} onClick={() => current && void writeCopy(buildJsonValueText(current))}>
+        </IconButton>
+        <IconButton hint={title.copyValue} label={copy.copyValue} disabled={current === null} onClick={() => current && void writeCopy(buildJsonValueText(current))}>
           <WholeWord size={14} aria-hidden="true" />
-        </button>
-        <button type="button" title={title.delete} aria-label={copy.delete} disabled={current === null || current.segments.length === 0} onClick={() => current && removeRow(current)}>
+        </IconButton>
+        <IconButton hint={title.delete} label={copy.delete} disabled={current === null || current.segments.length === 0} onClick={() => current && removeRow(current)}>
           <Trash2 size={14} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          title={title.undo}
-          aria-label={copy.undo}
+        </IconButton>
+        <IconButton
+          hint={title.undo}
+          label={copy.undo}
           disabled={document.undoInput === null}
           onClick={() => {
             const next = applyUndo(document)
@@ -196,11 +194,10 @@ export function JsonWorkbench(props: {
           }}
         >
           <Undo2 size={14} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          title={title.clear}
-          aria-label={copy.clear}
+        </IconButton>
+        <IconButton
+          hint={title.clear}
+          label={copy.clear}
           onClick={() => {
             const next = applyInput(document, '')
             publish(next, { status: 'empty' })
@@ -208,34 +205,31 @@ export function JsonWorkbench(props: {
           }}
         >
           <Eraser size={14} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          title={title.keepEscapes}
-          aria-label={copy.keepEscapes}
+        </IconButton>
+        <IconButton
+          hint={title.keepEscapes}
+          label={copy.keepEscapes}
           aria-pressed={document.keepEscapes}
           onClick={() => onDocument({ ...document, keepEscapes: !document.keepEscapes })}
         >
           <TextQuote size={14} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          title={title.decreaseFont(editorFontSize)}
-          aria-label={copy.decreaseFont(editorFontSize)}
+        </IconButton>
+        <IconButton
+          hint={title.decreaseFont(editorFontSize)}
+          label={copy.decreaseFont(editorFontSize)}
           disabled={editorFontSize <= 12}
           onClick={() => changeFont(-1)}
         >
           <Minus size={14} aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          title={title.increaseFont(editorFontSize)}
-          aria-label={copy.increaseFont(editorFontSize)}
+        </IconButton>
+        <IconButton
+          hint={title.increaseFont(editorFontSize)}
+          label={copy.increaseFont(editorFontSize)}
           disabled={editorFontSize >= 24}
           onClick={() => changeFont(1)}
         >
           <Plus size={14} aria-hidden="true" />
-        </button>
+        </IconButton>
       </div>
       <div ref={containerRef} className="json-panes">
         <div className="json-editor-pane" style={{ width: `${ratio * 100}%` }}>
@@ -300,12 +294,12 @@ export function JsonWorkbench(props: {
                 <span>{copy.matchSuffix}</span>
               </span>
             )}
-            <button type="button" aria-label={copy.previous} disabled={found.count === 0} onClick={() => setActiveMatchIndex((prev) => (found.count === 0 ? 0 : (Math.min(prev, found.count - 1) - 1 + found.count) % found.count))}>
+            <IconButton hint={title.previous} label={copy.previous} disabled={found.count === 0} onClick={() => setActiveMatchIndex((prev) => (found.count === 0 ? 0 : (Math.min(prev, found.count - 1) - 1 + found.count) % found.count))}>
               <ChevronUp size={14} aria-hidden="true" />
-            </button>
-            <button type="button" aria-label={copy.next} disabled={found.count === 0} onClick={() => setActiveMatchIndex((prev) => (found.count === 0 ? 0 : (Math.min(prev, found.count - 1) + 1) % found.count))}>
+            </IconButton>
+            <IconButton hint={title.next} label={copy.next} disabled={found.count === 0} onClick={() => setActiveMatchIndex((prev) => (found.count === 0 ? 0 : (Math.min(prev, found.count - 1) + 1) % found.count))}>
               <ChevronDown size={14} aria-hidden="true" />
-            </button>
+            </IconButton>
           </div>
           {result.status === 'empty' && <div className="json-tree-message">{copy.empty}</div>}
           {result.status === 'error' && (
