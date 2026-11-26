@@ -15,7 +15,7 @@ describe('mac window boundary', () => {
     const preload = readFileSync('apps/macos/src/preload/index.ts', 'utf8')
     expect(preload).toContain("exposeInMainWorld('jsonbranch'")
     expect(preload).not.toContain('leafnote')
-    for (const method of ['openDocument', 'saveDocument', 'saveDocumentAs', 'writeClipboard', 'confirmDiscard', 'onOpenFromOs', 'readEditorFontSize', 'writeEditorFontSize']) {
+    for (const method of ['openDocument', 'saveDocument', 'saveDocumentAs', 'writeClipboard', 'confirmDiscard', 'onOpenFromOs', 'readEditorFontSize', 'writeEditorFontSize', 'readJsonHistory', 'writeJsonHistory']) {
       expect(preload).toContain(method)
     }
   })

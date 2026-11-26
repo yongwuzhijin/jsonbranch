@@ -1,3 +1,4 @@
+import type { JsonHistoryEntry } from '@jsonbranch/json-core'
 import { messages } from '@jsonbranch/json-view'
 import { normalizeEditorFontSize } from '@jsonbranch/json-view/editor-font-size'
 import { useEffect, useState, type JSX } from 'react'
@@ -11,6 +12,8 @@ export function MacApp(): JSX.Element {
   const [notice, setNotice] = useState('')
   const [editorFontSize, setEditorFontSize] = useState(13)
   const [fontNotice, setFontNotice] = useState('')
+  const [history, setHistory] = useState<JsonHistoryEntry[]>([])
+  const [historyReady, setHistoryReady] = useState(false)
   const locale = navigator.language.toLowerCase().startsWith('en') ? 'en' : 'zh'
   const api = window.jsonbranch
 
@@ -26,6 +29,25 @@ export function MacApp(): JSX.Element {
         setNotice(result.reason)
       }
     })
+  }, [api])
+
+  useEffect(() => {
+    if (!api?.readJsonHistory) {
+      setHistoryReady(true)
+      return
+    }
+    let cancelled = false
+    void api.readJsonHistory()
+      .then((entries) => {
+        if (!cancelled) setHistory(entries)
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setHistoryReady(true)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [api])
 
   useEffect(() => {
@@ -110,6 +132,12 @@ export function MacApp(): JSX.Element {
         locale={locale}
         editorFontSize={editorFontSize}
         onEditorFontSize={(size) => void changeFont(size)}
+        history={history}
+        historyReady={historyReady}
+        onHistoryChange={(entries) => {
+          setHistory(entries)
+          void api?.writeJsonHistory?.(entries)
+        }}
         save={save}
         onOpen={() => void open()}
         onSaveAs={(content) => void saveAs(content)}

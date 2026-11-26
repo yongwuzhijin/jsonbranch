@@ -1,4 +1,5 @@
 import { deleteJsonNodeAt } from './json-delete-node'
+import { parseEditedLiteral, renameJsonKey, setJsonValue } from './json-edit'
 import { parseJsonInput } from './parse-json-input'
 
 export type JsonDocument = {
@@ -19,17 +20,22 @@ export function createJsonDocument(input = ''): JsonDocument {
   }
 }
 
-export function applyFormat(document: JsonDocument): JsonDocument {
+export function applyFormat(document: JsonDocument, indent: 2 | 4 = 2): JsonDocument {
   const result = parseJsonInput(document.input, { keepEscapes: document.keepEscapes })
   if (result.status !== 'ok') {
     return document
   }
-  return { ...document, input: JSON.stringify(result.value, null, 2) }
+  const input = JSON.stringify(result.value, null, indent)
+  if (input === document.input) {
+    return document
+  }
+  return { ...document, undoInput: document.input, input }
 }
 
 export function applyDelete(
   document: JsonDocument,
-  segments: readonly (string | number)[]
+  segments: readonly (string | number)[],
+  indent: 2 | 4 = 2
 ): JsonDocument {
   if (segments.length === 0) {
     return document
@@ -47,8 +53,46 @@ export function applyDelete(
   return {
     ...document,
     undoInput: document.input,
-    input: JSON.stringify(nextValue, null, 2)
+    input: JSON.stringify(nextValue, null, indent)
   }
+}
+
+export function applyRenamedKey(
+  document: JsonDocument,
+  segments: readonly (string | number)[],
+  nextKey: string,
+  indent: 2 | 4 = 2
+): JsonDocument | null {
+  const result = parseJsonInput(document.input, { keepEscapes: document.keepEscapes })
+  if (result.status !== 'ok') {
+    return null
+  }
+  const nextValue = renameJsonKey(result.value, segments, nextKey)
+  if (nextValue === null) {
+    return null
+  }
+  return replaceDocumentText(document, JSON.stringify(nextValue, null, indent))
+}
+
+export function applyEditedValue(
+  document: JsonDocument,
+  segments: readonly (string | number)[],
+  raw: string,
+  indent: 2 | 4 = 2
+): JsonDocument | null {
+  const result = parseJsonInput(document.input, { keepEscapes: document.keepEscapes })
+  if (result.status !== 'ok') {
+    return null
+  }
+  const nextValue = setJsonValue(result.value, segments, parseEditedLiteral(raw))
+  return replaceDocumentText(document, JSON.stringify(nextValue, null, indent))
+}
+
+function replaceDocumentText(document: JsonDocument, input: string): JsonDocument {
+  if (input === document.input) {
+    return document
+  }
+  return { ...document, undoInput: document.input, input }
 }
 
 export function applyUndo(document: JsonDocument): JsonDocument {

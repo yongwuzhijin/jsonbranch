@@ -1,9 +1,9 @@
-import { createJsonDocument, type JsonDocument } from '@jsonbranch/json-core'
+import { createJsonDocument, type JsonDocument, type JsonHistoryEntry } from '@jsonbranch/json-core'
 import { JsonWorkbench, messages, TextSlot } from '@jsonbranch/json-view'
 import { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { chooseLocale } from '../../../src/shared/locale'
-import { chromeLocalArea, loadEditorFontSize, loadStoredDocument, saveEditorFontSize, saveStoredDocument, type StorageArea } from './storage'
+import { chromeLocalArea, loadEditorFontSize, loadJsonHistory, loadStoredDocument, saveEditorFontSize, saveJsonHistory, saveStoredDocument, type StorageArea } from './storage'
 
 function storedFrom(document: JsonDocument) {
   return {
@@ -21,13 +21,14 @@ export function ViewerApp({ area, locale }: { area: StorageArea; locale: 'zh' | 
   const [fontSize, setFontSize] = useState(13)
   const [fontReady, setFontReady] = useState(false)
   const [fontNotice, setFontNotice] = useState('')
+  const [history, setHistory] = useState<JsonHistoryEntry[]>([])
   const fontHydrated = useRef(false)
   const copyTarget = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     let cancelled = false
-    void loadStoredDocument(area)
-      .then((stored) => {
+    void Promise.all([loadStoredDocument(area), loadJsonHistory(area)])
+      .then(([stored, snapshots]) => {
         if (cancelled) {
           return
         }
@@ -36,6 +37,7 @@ export function ViewerApp({ area, locale }: { area: StorageArea; locale: 'zh' | 
           keepEscapes: stored.keepEscapes,
           showLineNumbers: stored.showLineNumbers
         })
+        setHistory(snapshots)
         setCanPersist(true)
         setReady(true)
       })
@@ -125,6 +127,12 @@ export function ViewerApp({ area, locale }: { area: StorageArea; locale: 'zh' | 
         locale={locale}
         editorFontSize={fontSize}
         onEditorFontSize={setFontSize}
+        history={history}
+        historyReady={ready}
+        onHistoryChange={(entries) => {
+          setHistory(entries)
+          void saveJsonHistory(area, entries).catch(() => undefined)
+        }}
         onDocument={setDocument}
         TextSlot={TextSlot}
         copyText={async (text) => {

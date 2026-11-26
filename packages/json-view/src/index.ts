@@ -1,4 +1,5 @@
 export { JsonWorkbench } from './JsonWorkbench'
+export { IconButton, TOOLTIP_DELAY_MS } from './Tooltip'
 export { messages } from './messages'
 export { TextSlot } from './TextSlot'
 export { createEditorWorker, createJsonWorker } from './monaco-environment'

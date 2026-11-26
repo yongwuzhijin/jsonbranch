@@ -1,8 +1,15 @@
 import { findJsonMatches, type JsonSearchMatch } from '@jsonbranch/json-core'
 
+export type TextReveal = {
+  start: number
+  end: number
+  nonce: number
+}
+
 export type TextSlotProps = {
   value: string
   fontSize?: number
+  reveal?: TextReveal | null
   onChange(value: string): void
 }
 

@@ -1,9 +1,41 @@
+export {
+  chineseToUnicode,
+  demoJson,
+  escapeJsonString,
+  jsonToQuery,
+  minifyJson,
+  pythonDictToJson,
+  unescapeJsonString,
+  unicodeToChinese,
+  type ConvertCode,
+  type ConvertResult
+} from './json-convert'
 export { buildJsonPairText, buildJsonValueText } from './json-copy-text'
+export {
+  formatHistoryAge,
+  formatHistoryBytes,
+  formatHistoryClock,
+  formatHistoryPreview,
+  isDistinctJsonDocument,
+  isMeaningfulJson,
+  JSON_HISTORY_LIMIT,
+  normalizeJsonHistory,
+  reviseActiveHistory,
+  snapshotJsonHistory,
+  removeJsonHistory,
+  type HistoryRevision,
+  type JsonHistoryEntry
+} from './json-history'
+export { parseEditedLiteral, renameJsonKey, setJsonValue } from './json-edit'
+export { locateJsonPath, type JsonSourceRange } from './json-location'
+export { jsonToSchema } from './json-schema'
 export { deleteJsonNodeAt } from './json-delete-node'
 export {
   applyDelete,
+  applyEditedValue,
   applyFormat,
   applyInput,
+  applyRenamedKey,
   applyUndo,
   createJsonDocument,
   isDirty,

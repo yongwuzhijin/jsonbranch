@@ -6,10 +6,11 @@
     <title>枝序</title>
     <style>
       html, body, #root, .mac-app, .mac-shell { height: 100%; margin: 0; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Helvetica Neue", "Microsoft YaHei", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
       .mac-app { display: flex; flex-direction: column; }
-      .mac-filebar, .mac-title { display: flex; gap: 8px; align-items: center; padding: 8px 10px; }
-      .mac-shell { display: flex; flex-direction: column; min-height: 0; flex: 1; }
-      .mac-shell .json-workbench { flex: 1; min-height: 0; }
     </style>
   </head>
   <body>

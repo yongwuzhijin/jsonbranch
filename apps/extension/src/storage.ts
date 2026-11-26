@@ -1,3 +1,4 @@
+import { normalizeJsonHistory, type JsonHistoryEntry } from '@jsonbranch/json-core'
 import { normalizeEditorFontSize } from '@jsonbranch/json-view/editor-font-size'
 
 export type StoredDocument = {
@@ -18,6 +19,7 @@ export type SessionArea = {
 
 export const DOCUMENT_KEY = 'document'
 export const EDITOR_FONT_KEY = 'editorFontSize'
+export const HISTORY_KEY = 'jsonHistory'
 export const VIEWER_TAB_KEY = 'viewerTabId'
 
 const EMPTY_DOCUMENT: StoredDocument = {
@@ -53,6 +55,18 @@ export async function loadEditorFontSize(area: StorageArea): Promise<number> {
   } catch {
     return 13
   }
+}
+
+export async function loadJsonHistory(area: StorageArea): Promise<JsonHistoryEntry[]> {
+  try {
+    return normalizeJsonHistory(await area.get(HISTORY_KEY))
+  } catch {
+    return []
+  }
+}
+
+export async function saveJsonHistory(area: StorageArea, entries: readonly JsonHistoryEntry[]): Promise<void> {
+  await area.set(HISTORY_KEY, normalizeJsonHistory(entries))
 }
 
 export async function saveEditorFontSize(area: StorageArea, size: number): Promise<void> {

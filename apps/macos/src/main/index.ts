@@ -5,12 +5,15 @@ import { fileURLToPath } from 'node:url'
 import { choiceEffect, createCloseGate } from './close-gate'
 import { openJsonFromDisk } from './document-io'
 import { readEditorFontFile, writeEditorFontResult } from './editor-font-file'
+import { readJsonHistoryFile, writeJsonHistoryFile } from './json-history-file'
 import { openDocument, saveDocument, saveDocumentAs, confirmDiscard, type WindowGrants } from './ipc-handlers'
 import { shouldBlockRequest, windowSecurityOptions } from './navigation'
 import { resolveRendererFile } from './renderer-path'
+import { applyCloseChoice, releaseClosedWindow, sendToLiveWindow, senderWebContentsId } from './window-lifetime'
 
 const grants: WindowGrants = new Map()
 const closeGate = createCloseGate()
+let editorWindow: BrowserWindow | null = null
 
 const rendererRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../renderer')
 
@@ -67,22 +70,23 @@ function createWindow(): BrowserWindow {
     }
   })
   window.on('close', (event) => {
+    if (window.isDestroyed()) {
+      return
+    }
     const dirty = window.getTitle().includes('未存储') || window.getTitle().includes('Unsaved')
     if (closeGate.shouldPrevent(dirty)) {
       event.preventDefault()
-      void confirmDiscard(window).then((choice) => {
-        const effect = choiceEffect(choice)
-        if (effect === 'arm-and-close') {
-          closeGate.arm()
-          window.close()
-          return
-        }
-        if (effect === 'request-save') {
-          window.webContents.send('jsonbranch:request-save-close')
-        }
-      })
+      void confirmDiscard(window)
+        .then((choice) => {
+          applyCloseChoice(window, choiceEffect(choice), () => closeGate.arm())
+        })
+        .catch(() => undefined)
     }
   })
+  window.on('closed', () => {
+    editorWindow = releaseClosedWindow(editorWindow, window)
+  })
+  editorWindow = window
   void window.loadURL('app://jsonbranch/index.html')
   return window
 }
@@ -115,24 +119,22 @@ app.whenReady().then(() => {
     return saveDocument(grants, input)
   })
   ipcMain.handle('jsonbranch:saveDocumentAs', async (event, input: { content: string }) => {
-    const owner = BrowserWindow.fromWebContents(event.sender)
-    return saveDocumentAs(grants, input.content, owner)
+    return saveDocumentAs(grants, input.content, ownerFromSender(event.sender))
   })
   ipcMain.handle('jsonbranch:writeClipboard', async (_event, text: string) => {
     clipboard.writeText(text)
   })
   ipcMain.handle('jsonbranch:readEditorFontSize', () => readEditorFontFile(app.getPath('userData')))
   ipcMain.handle('jsonbranch:writeEditorFontSize', (_event, size: unknown) => writeEditorFontResult(app.getPath('userData'), size))
-  ipcMain.handle('jsonbranch:confirmDiscard', async (event) => confirmDiscard(BrowserWindow.fromWebContents(event.sender)))
-  ipcMain.on('jsonbranch:os-close-ready', (event) => {
-    const owner = BrowserWindow.fromWebContents(event.sender)
-    if (!owner) {
-      return
-    }
-    closeGate.arm()
-    owner.close()
+  ipcMain.handle('jsonbranch:readJsonHistory', () => readJsonHistoryFile(app.getPath('userData')))
+  ipcMain.handle('jsonbranch:writeJsonHistory', (_event, entries: unknown) => {
+    writeJsonHistoryFile(app.getPath('userData'), Array.isArray(entries) ? entries : [])
   })
-  const window = createWindow()
+  ipcMain.handle('jsonbranch:confirmDiscard', async (event) => confirmDiscard(ownerFromSender(event.sender)))
+  ipcMain.on('jsonbranch:os-close-ready', (event) => {
+    applyCloseChoice(ownerFromSender(event.sender), 'arm-and-close', () => closeGate.arm())
+  })
+  createWindow()
   Menu.setApplicationMenu(
     Menu.buildFromTemplate([
       {
@@ -142,9 +144,9 @@ app.whenReady().then(() => {
       {
         label: '文件',
         submenu: [
-          { label: '打开…', accelerator: 'CmdOrCtrl+O', click: () => window.webContents.send('jsonbranch:menu', 'open') },
-          { label: '存储', accelerator: 'CmdOrCtrl+S', click: () => window.webContents.send('jsonbranch:menu', 'save') },
-          { label: '另存为…', accelerator: 'CmdOrCtrl+Shift+S', click: () => window.webContents.send('jsonbranch:menu', 'save-as') }
+          { label: '打开…', accelerator: 'CmdOrCtrl+O', click: () => sendToLiveWindow(editorWindow, 'jsonbranch:menu', 'open') },
+          { label: '存储', accelerator: 'CmdOrCtrl+S', click: () => sendToLiveWindow(editorWindow, 'jsonbranch:menu', 'save') },
+          { label: '另存为…', accelerator: 'CmdOrCtrl+Shift+S', click: () => sendToLiveWindow(editorWindow, 'jsonbranch:menu', 'save-as') }
         ]
       },
       { label: '编辑', submenu: [{ role: 'undo' }, { role: 'redo' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] }
@@ -152,7 +154,8 @@ app.whenReady().then(() => {
   )
   app.on('open-file', (event, file) => {
     event.preventDefault()
-    void openJsonAndSend(window, file)
+    const target = editorWindow !== null && !editorWindow.isDestroyed() ? editorWindow : createWindow()
+    void openJsonAndSend(target, file)
   })
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -161,13 +164,24 @@ app.whenReady().then(() => {
   })
 })
 
+function ownerFromSender(sender: Electron.WebContents): BrowserWindow | null {
+  if (senderWebContentsId(sender) === null) {
+    return null
+  }
+  const owner = BrowserWindow.fromWebContents(sender)
+  if (owner === null || owner.isDestroyed()) {
+    return null
+  }
+  return owner
+}
+
 async function openJsonAndSend(window: BrowserWindow, file: string): Promise<void> {
   const opened = await openJsonFromDisk(file)
   if (opened.status === 'ok') {
     grants.clear()
     grants.set(opened.path, opened.stamp)
   }
-  window.webContents.send('jsonbranch:openFromOs', opened)
+  sendToLiveWindow(window, 'jsonbranch:openFromOs', opened)
 }
 
 app.on('window-all-closed', () => {

@@ -24,6 +24,8 @@ function installApi(overrides: Partial<JsonbranchApi>): JsonbranchApi {
     notifyOsCloseReady: () => {},
     readEditorFontSize: vi.fn(async () => 13),
     writeEditorFontSize: vi.fn(async () => ({ ok: true })),
+    readJsonHistory: vi.fn(async () => []),
+    writeJsonHistory: vi.fn(async () => {}),
     ...overrides
   }
   window.jsonbranch = api

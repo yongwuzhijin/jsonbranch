@@ -28,4 +28,11 @@ describe('TextSlot', () => {
     rerender(<TextSlot value="{}" fontSize={11} onChange={() => {}} createWorker={() => { throw new EvalError('csp') }} />)
     expect((screen.getByRole('textbox') as HTMLTextAreaElement).style.fontSize).toBe('13px')
   })
+
+  it('selects and scrolls to a revealed source range', () => {
+    render(<TextSlot value={'{\n  "a": 1\n}'} reveal={{ start: 5, end: 8, nonce: 1 }} onChange={() => {}} createWorker={() => { throw new EvalError('csp') }} />)
+    const area = screen.getByRole('textbox') as HTMLTextAreaElement
+    expect(area.selectionStart).toBe(5)
+    expect(area.selectionEnd).toBe(8)
+  })
 })
