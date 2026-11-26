@@ -71,8 +71,8 @@ describe('extension persistence', () => {
       expect(set).toHaveBeenCalledWith('document', expect.objectContaining({ input: '{"a":1}' }))
     })
     set.mockClear()
-    fireEvent.click(screen.getByRole('button', { name: '增大字号，当前 13', exact: true }))
-    expect(await screen.findByRole('button', { name: '增大字号，当前 14', exact: true })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '增大字号，当前 13' }))
+    expect(await screen.findByRole('button', { name: '增大字号，当前 14' })).toBeTruthy()
     expect(set).toHaveBeenCalledWith('editorFontSize', 14)
     expect(set).not.toHaveBeenCalledWith('document', expect.anything())
     expect(screen.getByDisplayValue('{"a":1}')).toBeTruthy()
@@ -90,9 +90,9 @@ describe('extension persistence', () => {
       set
     }
     render(<ViewerApp area={area} locale="zh" />)
-    fireEvent.click(await screen.findByRole('button', { name: '增大字号，当前 13', exact: true }))
+    fireEvent.click(await screen.findByRole('button', { name: '增大字号，当前 13' }))
     expect((await screen.findByRole('alert')).textContent).toContain('字号未能记在本机')
-    expect(screen.getByRole('button', { name: '增大字号，当前 14', exact: true })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '增大字号，当前 14' })).toBeTruthy()
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '{"b":2}' } })
     expect(await screen.findByDisplayValue('{"b":2}')).toBeTruthy()
     await vi.waitFor(() => {
@@ -100,8 +100,8 @@ describe('extension persistence', () => {
     })
     expect(screen.getByText('字号未能记在本机')).toBeTruthy()
     failFont = false
-    fireEvent.click(screen.getByRole('button', { name: '增大字号，当前 14', exact: true }))
-    expect(await screen.findByRole('button', { name: '增大字号，当前 15', exact: true })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '增大字号，当前 14' }))
+    expect(await screen.findByRole('button', { name: '增大字号，当前 15' })).toBeTruthy()
     expect(screen.queryByText('字号未能记在本机')).toBeNull()
   })
 
@@ -115,7 +115,7 @@ describe('extension persistence', () => {
       }
     }
     render(<ViewerApp area={area} locale="en" />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Increase font size, current 13', exact: true }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Increase font size, current 13' }))
     expect((await screen.findByRole('alert')).textContent).toContain('Font size was not saved on this device.')
     expect(screen.getByDisplayValue('{}')).toBeTruthy()
   })

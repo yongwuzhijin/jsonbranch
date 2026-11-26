@@ -14,11 +14,11 @@ function useChinese(): void {
 
 function installApi(overrides: Partial<JsonbranchApi>): JsonbranchApi {
   const api: JsonbranchApi = {
-    openDocument: vi.fn(async () => ({ status: 'canceled' })),
-    saveDocument: vi.fn(async () => ({ status: 'denied' })),
-    saveDocumentAs: vi.fn(async () => ({ status: 'canceled' })),
+    openDocument: vi.fn(async () => ({ status: 'canceled' as const })),
+    saveDocument: vi.fn(async () => ({ status: 'denied' as const })),
+    saveDocumentAs: vi.fn(async () => ({ status: 'canceled' as const })),
     writeClipboard: vi.fn(async () => {}),
-    confirmDiscard: vi.fn(async () => 'cancel'),
+    confirmDiscard: vi.fn(async () => 'cancel' as const),
     onOpenFromOs: () => () => {},
     onRequestSaveClose: () => () => {},
     notifyOsCloseReady: () => {},
@@ -35,12 +35,12 @@ describe('MacApp editor font', () => {
     useChinese()
     installApi({ readEditorFontSize: vi.fn(async () => 18) })
     render(<MacApp />)
-    expect(await screen.findByRole('button', { name: '增大字号，当前 18', exact: true })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: '增大字号，当前 18' })).toBeTruthy()
     cleanup()
     useChinese()
     installApi({ readEditorFontSize: vi.fn(async () => { throw new Error('missing') }) })
     render(<MacApp />)
-    expect(await screen.findByRole('button', { name: '增大字号，当前 13', exact: true })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: '增大字号，当前 13' })).toBeTruthy()
   })
 
   it('keeps the new size visible when the preference write fails and does not save a file', async () => {
@@ -50,9 +50,9 @@ describe('MacApp editor font', () => {
       writeEditorFontSize: vi.fn(async () => ({ ok: false }))
     })
     render(<MacApp />)
-    fireEvent.click(await screen.findByRole('button', { name: '增大字号，当前 13', exact: true }))
+    fireEvent.click(await screen.findByRole('button', { name: '增大字号，当前 13' }))
     expect(await screen.findByText('字号未能记在本机')).toBeTruthy()
-    expect(screen.getByRole('button', { name: '增大字号，当前 14', exact: true })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '增大字号，当前 14' })).toBeTruthy()
     expect(api.saveDocument).not.toHaveBeenCalled()
     expect(api.saveDocumentAs).not.toHaveBeenCalled()
     expect(screen.getByText('未打开的文档')).toBeTruthy()

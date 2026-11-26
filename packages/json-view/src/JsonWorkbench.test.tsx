@@ -62,7 +62,7 @@ describe('JsonWorkbench', () => {
     render(<Host copyText={async () => {}} />)
     const names = ['格式化', '全部展开', '全部折叠', '行号', '复制', '复制路径', '复制键值对', '复制值', '删除', '撤销', '清空', '保留转义']
     for (const name of names) {
-      const button = screen.getByRole('button', { name, exact: true })
+      const button = screen.getByRole('button', { name })
       expect(button.getAttribute('title')).toBe(name)
       expect(button.textContent?.includes(name)).toBe(false)
       expect(button.querySelector('svg')).toBeTruthy()
@@ -95,16 +95,16 @@ describe('JsonWorkbench', () => {
       ['Keep escapes', '保留转义']
     ]
     for (const [label, title] of pairs) {
-      expect(screen.getByRole('button', { name: label, exact: true }).getAttribute('title')).toBe(title)
+      expect(screen.getByRole('button', { name: label }).getAttribute('title')).toBe(title)
     }
-    expect(screen.getByRole('button', { name: 'Decrease font size, current 13', exact: true }).getAttribute('title')).toBe('减小字号，当前 13')
-    expect(screen.getByRole('button', { name: 'Increase font size, current 13', exact: true }).getAttribute('title')).toBe('增大字号，当前 13')
+    expect(screen.getByRole('button', { name: 'Decrease font size, current 13' }).getAttribute('title')).toBe('减小字号，当前 13')
+    expect(screen.getByRole('button', { name: 'Increase font size, current 13' }).getAttribute('title')).toBe('增大字号，当前 13')
   })
 
   it('toggles line numbers and keep escapes without changing the text', () => {
     render(<Host copyText={async () => {}} />)
-    const lines = screen.getByRole('button', { name: '行号', exact: true })
-    const escapes = screen.getByRole('button', { name: '保留转义', exact: true })
+    const lines = screen.getByRole('button', { name: '行号' })
+    const escapes = screen.getByRole('button', { name: '保留转义' })
     expect(lines.getAttribute('aria-pressed')).toBe('false')
     expect(escapes.getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(lines)
@@ -117,18 +117,18 @@ describe('JsonWorkbench', () => {
 
   it('keeps the existing disabled conditions', () => {
     render(<Host copyText={async () => {}} initial="" />)
-    expect(screen.getByRole('button', { name: '格式化', exact: true }).hasAttribute('disabled')).toBe(true)
-    expect(screen.getByRole('button', { name: '复制', exact: true }).hasAttribute('disabled')).toBe(true)
-    expect(screen.getByRole('button', { name: '复制路径', exact: true }).hasAttribute('disabled')).toBe(true)
-    expect(screen.getByRole('button', { name: '复制键值对', exact: true }).hasAttribute('disabled')).toBe(true)
-    expect(screen.getByRole('button', { name: '复制值', exact: true }).hasAttribute('disabled')).toBe(true)
-    expect(screen.getByRole('button', { name: '撤销', exact: true }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: '格式化' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: '复制' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: '复制路径' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: '复制键值对' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: '复制值' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: '撤销' }).hasAttribute('disabled')).toBe(true)
   })
 
   it('disables delete on the root row', () => {
     render(<Host copyText={async () => {}} />)
     fireEvent.click(screen.getByTestId('json-tree-row-root'))
-    expect(screen.getByRole('button', { name: '删除', exact: true }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: '删除' }).hasAttribute('disabled')).toBe(true)
   })
 
   it('changes only the editor font size and disables both ends', () => {
@@ -152,9 +152,9 @@ describe('JsonWorkbench', () => {
       )
     }
     render(<FontHost />)
-    fireEvent.click(screen.getByRole('button', { name: '减小字号，当前 13', exact: true }))
+    fireEvent.click(screen.getByRole('button', { name: '减小字号，当前 13' }))
     expect(seen).toContain(12)
-    const decrease = screen.getByRole('button', { name: '减小字号，当前 12', exact: true })
+    const decrease = screen.getByRole('button', { name: '减小字号，当前 12' })
     expect(decrease.hasAttribute('disabled')).toBe(true)
     expect(decrease.hasAttribute('aria-pressed')).toBe(false)
     cleanup()
@@ -173,7 +173,7 @@ describe('JsonWorkbench', () => {
       )
     }
     render(<UpperHost />)
-    const increase = screen.getByRole('button', { name: '增大字号，当前 24', exact: true })
+    const increase = screen.getByRole('button', { name: '增大字号，当前 24' })
     expect(increase.hasAttribute('disabled')).toBe(true)
     fireEvent.click(increase)
     expect(increase.getAttribute('aria-label')).toBe('增大字号，当前 24')
@@ -202,7 +202,7 @@ describe('JsonWorkbench', () => {
       )
     }
     render(<DirtyHost />)
-    fireEvent.click(screen.getByRole('button', { name: '增大字号，当前 13', exact: true }))
+    fireEvent.click(screen.getByRole('button', { name: '增大字号，当前 13' }))
     expect(isDirty(latest)).toBe(false)
     expect(latest.undoInput).toBeNull()
     expect(latest.input).toBe('{"name":"Beta"}')
