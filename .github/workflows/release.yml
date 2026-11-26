@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - cursor/jsonbranch-first-release-550b
+      - cursor/macos-icon-unsigned-package-7fec
     tags:
       - "v*"
 

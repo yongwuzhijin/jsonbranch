@@ -42,7 +42,7 @@ bundle id 是 `app.jsonbranch.macos`。应用可以打开和存储本地 `.json`
 
 签名和公证只在 `APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID`、`CSC_LINK`、`CSC_KEY_PASSWORD` 五项都有值时进行。缺任何一项就上传未签名包，构建不会因此失败。未签名应用在其他 Mac 上通常会被 Gatekeeper 拦截，接收者需要在系统设置或 Finder 的「打开」里明确同意后才能运行。没有公证的包不是双击即开的正式安装包。Linux 不能为这些包签名或公证。
 
-人工验收作业 `smoke` 和 `chrome-smoke` 只在手动触发工作流时出现。`release.yml` 目前不在默认分支上，因此 GitHub 不能从功能分支接受 `workflow_dispatch`。打包由推送到 `cursor/jsonbranch-first-release-550b` 触发。点击扩展图标是否打开全页，在无头 Chrome 里没有可点击的工具栏按钮，这一步仍是人工验收。
+人工验收作业 `smoke` 和 `chrome-smoke` 只在手动触发工作流时出现。打包由推送到 `release.yml` 列出的分支触发，这次包括 `cursor/macos-icon-unsigned-package-7fec`。点击扩展图标是否打开全页，在无头 Chrome 里没有可点击的工具栏按钮，这一步仍是人工验收。
 
 ## 许可
 
